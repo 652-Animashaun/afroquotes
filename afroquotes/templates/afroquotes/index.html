@@ -1,0 +1,65 @@
+{% extends "afroquotes/layout.html" %}
+
+
+
+    {% block body %}
+    
+
+    <div class="container">
+        <h2>Fresh Quotes</h2>
+
+        <div class="row">
+            {% for quote in Quotes %}
+            <div class= "col-sm-12 col-md-12 col-lg-4">
+
+                <!-- <img src="{{quote.image}}" width="auto"> -->
+               <blockquote  class="blockquote">
+                 <p class="lead">
+                   <mark><a id="annotate" href="#" onclick="getAnnotate(this);" data-link='{{quote.id}}' data-toggle='modal' data-target="#annotate-modal">{{quote.quote}}</a></mark> 
+                </p>
+                <footer class="blockquote-footer"><a href="#"> {{quote.artist}} </a><cite title="Source Title"><a href="#"> {{quote.song}} </a></cite></footer> 
+               </blockquote>
+                <a href="{% url 'annotate' quote.id %}">See Annotations</a>
+
+            </div>
+            
+            {% endfor %}
+
+
+            <!-- Modal -->
+            <div class="modal fade" id="annotate-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLongTitle" aria-hidden="true">
+              <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle"></h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                      <span aria-hidden="true">&times;</span>
+                    </button>
+                  </div>
+                  <div class="modal-body">
+                    <div>
+                        <div class="row">
+                            <div id="artimage" class="col-sm-4"></div>
+                            <div id="modquote" class="col-sm-8"></div>
+                        </div>
+                        <div class="row">
+                            <h5> Afroquotes Annotation </h5>
+                            <div id="annotation" class="col-sm-10"></div>
+                            
+                        </div>
+                    </div>
+                    
+                    ...
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary">Save changes</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+        </div>
+    
+</div>
+{% endblock %}

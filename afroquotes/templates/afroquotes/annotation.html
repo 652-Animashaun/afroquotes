@@ -1,0 +1,46 @@
+{% extends "afroquotes/layout.html" %}
+
+
+
+    {% block body %}
+    
+
+    <div class="container">
+        <h2>Quote Annotation</h2>
+
+        <div class="row">
+            
+            <div class= "col-sm-6 left">
+
+                <img src="{{quote.image}}" width="400px">
+               <blockquote class="blockquote">
+                 <p class="lead">
+                   <mark>{{quote.quote}}</mark> 
+                </p>
+                <footer class="blockquote-footer"><a href="#"> {{quote.artist}} </a><cite title="Source Title"><a href="#"> {{quote.song}} </a></cite></footer> 
+               </blockquote>
+                
+            </div>
+            
+            <div class="col-sm-4 right">
+                <h2>Annotations</h2>
+                {% for annotation in annotations %}
+                <div>
+                    {{annotation.anotation}}
+                </div>
+                {% endfor %}
+                 <div>
+                        <form method="POST" action="{% url 'annotate' quote.id %}">
+                            {% csrf_token %}
+                            {{form}}
+                            <input type="submit" name="submit">
+                        </form>
+                    </div>
+            </div>        
+
+            
+            
+        </div>
+    
+</div>
+{% endblock %}

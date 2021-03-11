@@ -1,0 +1,49 @@
+{% extends "afroquotes/layout.html" %}
+
+
+
+    {% block body %}
+
+    <div class="container">
+        <h2>Latest Quotes</h2>
+        <div class="row">
+           <div class="">
+
+            <form action="{% url 'submitQuote' %}" method="POST">
+                {% csrf_token %}
+                <div class="form-row">
+                    <div class="form-group col-md-12">
+                        <div class="col">
+                            <input class="form-control" type="text" name="quote" placeholder="Quote">
+                        </div>
+                    </div>
+                    
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-md-12">
+                        
+                            <input class="form-control" type="text" name="song" placeholder="source title">
+                        
+                        
+                            <input class="form-control" type="text" name="artist" placeholder="author name">
+                        
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-md-12">
+                        <div class="col">
+                            <input class="form-control" type="text" name="image" placeholder="place image url here">
+                        </div>
+                        <div class="col">
+                            <input class="btn btn-primary" type="submit" name="submit">
+                        </div>
+                    </div>
+                </div>
+            </form>
+               
+           </div>
+            
+        </div>
+    
+</div>
+{% endblock %}

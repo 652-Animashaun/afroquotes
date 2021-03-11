@@ -23,20 +23,19 @@ class search(forms.Form):
 
 
 def index(request):
+
+	Quotes = Quote.objects.all()
+
+	return render(request, "afroquotes/index.html", {
+		"Quotes": Quotes,
+        "form": search()
+		})
+
+def serach(request, query):
     if request.method=="POST":
         query = request.POST["query"]
         print(query)
         pass
-
-    else:
-
-    	Quotes = Quote.objects.all()
-
-    	return render(request, "afroquotes/index.html", {
-    		"Quotes": Quotes,
-            "form": search()
-    		})
-
 
 def register(request):
     if request.method == "POST":

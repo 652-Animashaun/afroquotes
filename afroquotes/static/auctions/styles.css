@@ -1,3 +1,28 @@
 body {
-    padding: 10px;
+  padding: 25px;
+  background-color: white;
+  color: black;
+  font-size: 15px;
+}
+
+.dark-mode {
+  background-color: black;
+  color: white;
+}
+
+@media (min-width: 1030px){
+	.main-wrapper {
+	    float: left;
+	    padding-right: .75em;
+	    padding-left: 1.75em;
+	    width: 71.4285715%;
+	    }
+	}
+
+@media (min-width: 1030px){
+	.d-2of7 {
+	    float: left;
+	    padding-right: .75em;
+	    width: 28.5714286%;
+}
 }

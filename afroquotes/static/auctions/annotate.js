@@ -1,8 +1,48 @@
-// document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function() {
 
-//   document.querySelector('#annotate').addEventListener('click', getAnnotate);
-  
-// });
+	const upelem = document.querySelector('#upvote')
+	const form= document.querySelector("#upvote-form")
+	upelem.addEventListener('click', function(){
+		form.submit()
+
+	})
+
+	document.querySelector('#submit-suggestion').addEventListener('click', writeSuggestion)
+})
+
+function writeSuggestion(){
+	
+	var suggestion = document.querySelector('#anno-suggestion').value
+	var annoID = document.querySelector('#anno-suggestion').getAttribute('data-link')
+	if(suggestion.length < 10){
+		alert("You've written a suggestion of less than 10 characters?")
+	}
+
+	else {
+
+		fetch(`/submitSugg/${annoID}`, {
+		method: 'POST',
+		body: JSON.stringify({
+			submitedSugg:`${suggestion}`,
+			annotationID: `${annoID}`
+			})
+		})
+		.then(response=> response.json())
+		.then(data=>{
+			if (data.message != null){
+				alert(data.message)
+			}
+			else{
+				console.log(`${data.suggested}`)
+			}
+		})
+
+	}
+
+	
+
+}
+
 
 
 function getAnnotate(obj){
@@ -46,6 +86,8 @@ function getAnnotate(obj){
 			const image = data.annotated_quote_image
 			const annotation = data.annotation
 			const annotator = data.annotator
+			const annoSuggest = data.annotationSugg
+			
 			document.querySelector('#modalTitle').innerHTML= `Quote from ${song}`
 
 			elemImg.innerHTML= `<img src="${image}" width="200px">`
@@ -61,4 +103,3 @@ function getAnnotate(obj){
 
 	})
 }
-

@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from datetime import datetime    
+from djrichtextfield.models import RichTextField
 
 # Create your models here.
 
@@ -14,6 +16,9 @@ class Quote(models.Model):
 	contributor= models.ForeignKey(User, on_delete=models.DO_NOTHING)
 	timestamp = models.DateTimeField(auto_now_add=True, null=True)
 
+	def __str__(self):
+		return f"{self.quote} {self.song} {self.artist}"
+
 	def serialize(self):
 		return{
 			"id": self.id,
@@ -23,14 +28,15 @@ class Quote(models.Model):
 			"contributor":self.contributor.username,
 			"artist":self.artist,
 			"date":self.timestamp.strftime("%A, %d. %B %d/%m/%Y %I:%M%p")
-
 		}
 	
 class Annotation(models.Model):
 	annotation=models.CharField(max_length=300)
 	annotator=models.ForeignKey(User, on_delete=models.DO_NOTHING)
 	annotated=models.ForeignKey(Quote, on_delete=models.DO_NOTHING)
-	# verified= models.Boolean(default=False)
+	verified= models.BooleanField(default=False)
+	timestamp = models.DateTimeField(default=datetime.now)
+
 
 	def serialize(self):
 		return{
@@ -43,6 +49,32 @@ class Annotation(models.Model):
 			"annotated_quote_contrib": self.annotated.contributor.username,
 			"annotated_quote_id": self.annotated.id,
 			"annotated_quote_timestamp": self.annotated.timestamp,
-			"annotator": self.annotator.username
+			"annotator": self.annotator.username,
+			"upvotes": self.upvotes.count() 
+		}
+
+	def get_upvotes(self):
+		return self.upvotes.count() 
+
+
+
+class Upvote(models.Model):
+	annotation = models.ForeignKey(Annotation, on_delete=models.CASCADE, related_name="upvotes")
+	user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="upvoted")
+	timestamp = models.DateTimeField(auto_now_add=True)
+
+class SuggestionComment(models.Model):
+	user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_suggestion")
+	annotation= models.ForeignKey(Annotation, on_delete=models.CASCADE)
+	suggestion = models.CharField(max_length=300)
+
+	def serialize(self):
+		return{
+
+		"id": self.id,
+		"user": self.user.username,
+		"annotation": self.annotation.serialize(),
+		"suggestion": self.suggestion
+
 		}
 		

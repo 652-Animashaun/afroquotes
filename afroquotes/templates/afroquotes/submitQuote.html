@@ -11,7 +11,11 @@
 
             <form action="{% url 'submitQuote' %}" method="POST">
                 {% csrf_token %}
-                <div class="form-row">
+
+                {{form}}
+
+
+                <!-- <div class="form-row">
                     <div class="form-group col-md-12">
                         <div class="col">
                             <input class="form-control" type="text" name="quote" placeholder="Quote">
@@ -38,7 +42,7 @@
                             <input class="btn btn-primary" type="submit" name="submit">
                         </div>
                     </div>
-                </div>
+                </div> -->
             </form>
                
            </div>

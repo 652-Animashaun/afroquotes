@@ -1,0 +1,122 @@
+
+{% extends "afroquotes/layout.html" %}
+{% load social_share %}
+
+
+
+    {% block body %}
+    <section class="showcase">
+		<div class="col-lg-4">
+			<div class="img-thumbnail">
+				<img class="img-thumbnail rounded float-start" src="{{quote.image}}">
+			</div>
+		</div>
+		<div class="container-fluid p-0">
+			<div class="row no-gutters">
+				<div class="col-lg-6 order-lg-1 my-auto showcase-text shadow-sm p-3 mb-5 bg-body rounded" style="background-image: url'({{quote.image}});">
+					<h2>{{quote.song}}</h2>
+					<h5>{{quote.artist}}</h5>
+					<blockquote class="blockquote ">
+						<mark>{{quote.quote}}</mark>
+						<p class="lead mb-0"></p>
+						{% post_to_facebook object_or_url "Post to Facebook!" %}
+						{% post_to_whatsapp  object_or_url "Share To Whatsapp" %}
+						{% post_to_twitter object_or_url "Tweet" %}
+					</blockquote>
+
+				</div>
+				{% if annotation %}
+				<div class="col-lg-6 order-lg-2 shadow p-3 mb-5 bg-body rounded">
+					<h4>Verified Annotation</h4>
+					<p class="lead mb-0">{{annotation.annotation}}
+						<br><span><small> -Contributor: {{annotation.annotator}} </small></span>
+						
+					</p>
+
+					<form id="upvote-form" method="POST" action="{% url 'upvote' annotation.id %}">
+						{% csrf_token %}
+						<br><i id="upvote" data-link="{{annotation.id}}" class="far fa-thumbs-up fa-md"> {{annotation.get_upvotes}} </i>
+					</form>
+					<div>
+						
+						<div id="suggest-section">
+							<p>
+								<button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-suggestion" aria-expanded="false" aria-controls="collapse-suggestion">
+								    See suggestions
+								 </button>
+							</p>
+							
+							<div class="collapse" id="collapse-suggestion">
+
+								{% if annotationSugg|length > 0 %}
+									{% for suggestion in annotationSugg %}
+										<div class="card-body">
+
+											{{suggestion.suggestion}}
+											<p><em>-{{suggestion.user}}</em></p>
+
+											{% endfor %}
+										
+											{% else %}
+											<em>No suggestions to this annotation</em>
+											
+										</div>
+										{% endif %}
+
+								<div id="">
+									<input data-link="{{annotation.id}}" id="anno-suggestion" class="form-control" type="text" name="text" placeholder="suggest edit to this annotation earn AI">
+									<button id = "submit-suggestion" class="btn btn-primary">Submit</button>
+								</div>
+							</div>
+							
+						</div>
+
+					</div>
+				</div>
+				{% endif %}
+				<!--  If annotation not found block -->
+				{% if notfoundError %}
+				<div class="col-lg-6 order-lg-2 showcase-text shadow-sm p-3 mb-5 bg-body rounded">
+					<h4>No Annotation Found</h4>
+					<p class="lead mb-0">{{notfoundError}}<a href="{% url 'write_annotate' quote.id %}">Annotate</a></p>
+				</div>
+				{% endif %}
+			</div>
+		</div>
+	</section>
+<!-- More Quotes from "Song" -->
+{% if sQuotes %}
+<section class="testimonials bg-light text-center">
+	<div class="container">
+		<h2 class=mb-5> More Quotes from "{{quote.song}}"</h2>
+		<div class="row">
+			<div class="col-lg-4 shadow p-3 mb-5 bg-body rounded">
+				{% for quote in sQuotes%}
+				<a id="annotate" href="{% url 'annotate' quote.id %}">{{quote.quote}}</a>
+				<footer class="blockquote-footer"><a href="{% url 'quote_by' quote.artist %}"> {{quote.artist}} </a><cite title="Source Title"><a href="{% url 'quote_from' quote.song %}"> {{quote.song}} </a></cite></footer>
+				{% endfor %}
+			</div>
+		</div>
+	</div>
+</section>
+{% endif %}
+<!-- End More Quotes from "Song" -->
+<!-- More Quotes by "artist" -->
+{% if aQuotes %}
+<section class="testimonials bg-light text-center">
+	<div class="container">
+		<h2 class=mb-5> More Quotes by "{{quote.artist}}"</h2>
+		<div class="row">
+			<div class="col-lg-4 shadow p-3 mb-5 bg-body rounded">
+				{% for quote in aQuotes%}
+				<a id="annotate" href="{% url 'annotate' quote.id %}">{{quote.quote}}</a>
+				<footer class="blockquote-footer"><a href="{% url 'quote_by' quote.artist %}"> {{quote.artist}} </a><cite title="Source Title"><a href="{% url 'quote_from' quote.song %}"> {{quote.song}} </a></cite></footer>
+				{% endfor %}
+			</div>
+		</div>
+	</div>
+</section>
+<!-- End More Quotes by "artist" -->
+{% endif %}
+
+  	{% endblock %}

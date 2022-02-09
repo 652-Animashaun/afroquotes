@@ -15,7 +15,7 @@ from .models import *
 
 # Create your views here.
 class SubmitQuote(forms.Form):
-	quote = forms.CharField(widget=RichTextWidget())
+	quote = forms.CharField(widget=forms.Textarea())
 	song = forms.CharField(max_length=64)
 	artist= forms.CharField(max_length=64)
 	image = forms.URLField()

@@ -1,3 +1,5 @@
+from afroquotes import config
+
 """
 Django settings for quotes project.
 
@@ -20,7 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '72697gcx^muas=0c^0a8ge#sfpeqd_yj=&t9&7!v_ixa!k%rdd'
+SECRET_KEY = config.SECRET_KEY
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -77,12 +79,25 @@ WSGI_APPLICATION = 'quotes.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': config.PROD_DATABASE["NAME"], 
+        'USER': 'postgres', 
+        'PASSWORD': config.PROD_DATABASE["PASSWORD"],
+        'HOST': '127.0.0.1', 
+        'PORT': '5432',
     }
 }
+
+
 
 AUTH_USER_MODEL='afroquotes.User'
 

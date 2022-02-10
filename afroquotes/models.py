@@ -35,6 +35,8 @@ class Annotation(models.Model):
 	annotator=models.ForeignKey(User, on_delete=models.DO_NOTHING)
 	annotated=models.ForeignKey(Quote, on_delete=models.DO_NOTHING)
 	verified= models.BooleanField(default=False)
+	annotation_view_count=models.IntegerField(null=True, default=0)
+	last_viewed=models.DateTimeField(null=True)
 	timestamp = models.DateTimeField(default=datetime.now)
 
 
@@ -50,6 +52,8 @@ class Annotation(models.Model):
 			"annotated_quote_id": self.annotated.id,
 			"annotated_quote_timestamp": self.annotated.timestamp,
 			"annotator": self.annotator.username,
+			"annotation_view_count":self.annotation_view_count,
+			"last_viewed":self.last_viewed,
 			"upvotes": self.upvotes.count() 
 		}
 

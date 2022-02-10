@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django import forms
 import json
+import datetime
 from django.urls import reverse
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
@@ -31,9 +32,8 @@ def index(request):
         form = searchForm(request.POST)
         if form.is_valid():
             query = form.cleaned_data['queryTerm']
-            print(query)
+
             results = Quote.objects.filter(quote__icontains=query)
-            print(results)
             return render(request, "afroquotes/index.html", {
                 "form": searchForm(),
                 "Quotes": results
@@ -125,7 +125,11 @@ def annotate(request, quote_id):
         return JsonResponse({"error": "quote not found"}, status=404)
     if request.method == "GET":
         try:
-            quoteAnnotQuery = Annotation.objects.get(annotated=quote, verified=True)
+            quoteAnnotQuery = Annotation.objects.get(annotated=quote)
+            quoteAnnotQuery.last_viewed=datetime.now()
+            quoteAnnotQuery.annotation_view_count+=1
+            quoteAnnotQuery.save()
+            print(quoteAnnotQuery)
         except Annotation.DoesNotExist:
             # returning error to fetch request from JS. This is deprecated. Now render without JSON
             # return JsonResponse({"Error": "There are no annotations for this Quote."}, status=404)
@@ -154,8 +158,11 @@ def write_annotate(request, quote_id):
     if request.method=='POST':
             if request.user.is_authenticated:
                 form = Annotate(request.POST)
+                print(form)
+
                 if form.is_valid():
                     annotation = form.cleaned_data['annotation']
+                    print(annotation)
                     annotator= request.user
                     annotate = Annotation(annotation=annotation, annotator=annotator, annotated=annotated)
                     annotate.save()

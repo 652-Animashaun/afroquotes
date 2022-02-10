@@ -87,16 +87,20 @@ function getAnnotate(obj){
 			const annotation = data.annotation
 			const annotator = data.annotator
 			const annoSuggest = data.annotationSugg
+			const annotation_view_count= data.annotation_view_count
+			console.log(`${annotation_view_count}`)
 			
 			document.querySelector('#modalTitle').innerHTML= `Quote from ${song}`
 
 			elemImg.innerHTML= `<img src="${image}" width="200px">`
 			elem.innerHTML = `<blockquote class="blockquote"><p class="lead"> <mark>${Quote}</mark> </p><footer class="blockquote-footer"><a href="#">${song}</a><cite title="Source Title"><a href="#">${artist}</a></cite></footer> </blockquote>`
+			elem_view_count=`<div>${annotation_view_count}</div>`
 			
 			elemAnno.innerHTML=`<p>${annotation}</p><p><span>Contributors: <em>${annotator}</em></span></p>`
 			document.querySelector('#modquote').append(elem)
 			document.querySelector('#artimage').append(elemImg)
 			document.querySelector('#annotation').append(elemAnno)
+			document.querySelector('#view_count').append(elem_view_count)
 					
 		}
 		

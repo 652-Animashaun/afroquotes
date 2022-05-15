@@ -54,11 +54,16 @@ class Annotation(models.Model):
 			"annotator": self.annotator.username,
 			"annotation_view_count":self.annotation_view_count,
 			"last_viewed":self.last_viewed,
-			"upvotes": self.upvotes.count() 
+			"upvotes": self.upvotes.count(),
+			"comments": self.get_comments(),
 		}
 
 	def get_upvotes(self):
 		return self.upvotes.count() 
+	def get_user_upvote(self, user_id):
+		return True if Upvote.objects.filter(user=user_id, annotation=self.id) else False
+	def get_comments(self):
+		return [comment.serialize() for comment in SuggestionComment.objects.filter(annotation=self.id)]
 
 
 
@@ -69,7 +74,7 @@ class Upvote(models.Model):
 
 class SuggestionComment(models.Model):
 	user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_suggestion")
-	annotation= models.ForeignKey(Annotation, on_delete=models.CASCADE)
+	annotation= models.ForeignKey(Annotation, on_delete=models.CASCADE, related_name="comments")
 	suggestion = models.CharField(max_length=300)
 
 	def serialize(self):

@@ -1,20 +1,101 @@
 document.addEventListener('DOMContentLoaded', function() {
+    const BASE_URL = `http://localhost:8000/`
     // document.querySelector('#submit-suggestion').addEventListener('click', writeSuggestion);
-    // const upelem = document.querySelector('#upvote')
-    // const form= document.querySelector("#upvote-form")
-    // document.querySelector("#submit-quote").addEventListener('click', submitQuote);
-     // document.querySelector('#annotate_buttton').addEventListener('click', ()=>submit_annotation() )
-     document.querySelector('#search').addEventListener('click', function(){
-        const query=document.querySelector('#query_term').value
-        console.log(query)
-        search(query)
-     })
+    const upvote_elem = document.querySelectorAll('.upvote')
+    const up_annotation = [upvote_elem]
+    console.log(up_annotation[0])
+    up_annotation[0].forEach(function(upvote_ann){
+        upvote_ann.addEventListener('click', function(){
+            upvote(upvote_ann)
+        })
+    })
+    const elements = document.querySelectorAll('.view-annotation')
+    const annotations = [elements]
+    console.log(annotations[0])
 
+    annotations[0].forEach(function(annotation){
+    annotation.addEventListener('click', function(){
+        get_annotate_helper(annotation)
+    })
 
+    })
+    const suggestion_form_elements = document.querySelectorAll('#suggestion_form')
+    console.log(`${suggestion_form_elements}`)
+    console.log(suggestion_form_elements.length)
+    const suggestion_forms = [suggestion_form_elements]
+    console.log(suggestion_forms[0].length)
+    console.log(`${suggestion_forms[0]}`)
+    suggestion_forms[0].forEach(function(suggestion){
+    suggestion.addEventListener('submit', function(event){
+        console.log(suggestion)
+        event.preventDefault()
+        writeSuggestion(suggestion)
 
-    document.querySelector('#home').addEventListener('click',()=>load_quotes(1, `quotes`));
-    
+        })
+    })
+    var dismiss_annnotation = document.querySelectorAll('.dismiss-annotation')
+    dismiss_annnotation.forEach(function(dis_ann){
+        dis_ann.addEventListener('click', function(){
+            document.querySelector(`#anno_${dis_ann.dataset.link}`).style.display = 'none'
+        })
+    })
+
+    var approve_annotation_elem = document.querySelectorAll('.approve-annotation')
+    // var approve_annotation = [approve_annotation_elems]
+    console.log(approve_annotation_elem)
+
+    approve_annotation_elem.forEach(function(app_ann){
+        var annotation_id = app_ann.dataset.link
+        app_ann.addEventListener('click', function(){
+            approve_annotation(annotation_id)
+            document.querySelector(`#anno_${annotation_id}`).style.display = 'none'
+        })
+    })
+     
 })
+
+function upvote(upvote_ann){
+    var annotation_id = upvote_ann.dataset.link
+    fetch(`${BASE_URL}upvote/${annotation_id}`)
+    .then(response=>response.json())
+    .then(data=>{
+        console.log(data)
+        if (data.Unauthorized){
+            // alert(`Need to login to perform action.`)
+            console.log("Need to login to perform action.")
+            window.location.href = "/login"
+
+        }
+        else{
+
+            upvote_ann_first_child_elem = upvote_ann.firstElementChild
+
+            upvote_ann_first_child_elem.innerHTML = ""
+            upvote_ann_first_child_elem.innerHTML = data.upvotes
+        }
+
+    })
+
+}
+function get_annotate_helper(annotation){
+    var annotation_id = annotation.dataset.link
+    var quote_element_id = annotation.dataset.target
+    var clicked = annotation.dataset.clicked
+    if (annotation_id){
+        console.log(`fetch annotation ${annotation_id}`)
+        var collapsible_block = document.querySelector(quote_element_id)
+        console.log(collapsible_block)
+        if (clicked=='false'){
+            annotation.dataset.clicked='true'
+            getAnnotate(annotation)
+        } 
+        else{
+            annotation.dataset.clicked='false'
+        }
+
+    }
+
+}
 
 function load_quotes(page, url){
     // alert(`clicked-home`)
@@ -53,8 +134,6 @@ function display_quotes(data, url){
             const artist = q.artist
             element.className = 'blockquote row'
             
-            // element.innerHTML = `<a id= email  data-link="${email_id}" onclick="getEmail(this); return false;"><span>from: ${sender}</span> <span>subject: ${subject}</span> <span class="justify-right">${date}</span></a>`
-
             element.innerHTML=`  <p class="lead text-center"> <mark><a class="quote_selector" data-link=${id}>${quote}</a></mark> </p><br><footer class="blockquote-footer"><a href="#">${artist} </a><cite title="Source Title"><a href="#">${song} </a></cite></footer>`
 
             q_elem.append(element)
@@ -92,9 +171,6 @@ function display_quotes(data, url){
 
 
 function search(query, page=1){
-    // console.log(query)
-    // const data = {value: `${query}`}]
-    // const url = `search/${query}`
     const url = `search`
 
 
@@ -114,19 +190,48 @@ function search(query, page=1){
 
 }
 
+function approve_annotation(annotation_id, approve=true){
+    if (approve === true){
+        fetch(`approve_annotation/${annotation_id}`)
+        .then(response=> {
+            if (response.ok) {
+                return response.json()
+            }
+            else if(response.status===401){
+        
+                return response.json()
+            }
+            else {
+                return Promise.reject('Error:' + response.status)
+            }
+        } )
 
-function writeSuggestion(){
+    }
+
+}
+
+
+function writeSuggestion(suggestion_form){
     
-    var suggestion = document.querySelector('#anno-suggestion').value
-    var annoID = document.querySelector('#anno-suggestion').getAttribute('data-link')
+    var suggestion = suggestion_form['comment'].value
+    var annoID = suggestion_form['comment_anno_id'].value
+    const csrftoken = getCookie('csrftoken')
+    console.log(suggestion)
     if(suggestion.length < 10){
-        alert("You've written a suggestion of less than 10 characters?")
+        data = {}
+        data.Error = "You've written a suggestion of less than 10 characters?"
+        errorHandler(data)
+        // alert("You've written a suggestion of less than 10 characters?")
     }
 
     else {
 
-        fetch(`/submitSugg/${annoID}`, {
+        fetch(`submit_suggestion/${annoID}`, {
         method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': `${csrftoken}`,
+        },
         body: JSON.stringify({
             submitedSugg:`${suggestion}`,
             annotationID: `${annoID}`
@@ -136,7 +241,7 @@ function writeSuggestion(){
             if (response.ok) {
                 return response.json()
             }
-            else if(response.status===404){
+            else if(response.status>=400){
                 return response.json()
             }
             else{
@@ -144,8 +249,10 @@ function writeSuggestion(){
             }
         })
         .then(data=>{
-            if (data.message != null){
-                alert(data.message)
+            if (data.Unauthorized){
+                alert(`${data.Unauthorized}. You will be redirected to login.`)
+                window.location.href = "/login"
+
             }
             else{
                 console.log(`${data.suggested}`)
@@ -155,56 +262,29 @@ function writeSuggestion(){
     }
 }
 
-function submit_annotation(quote_id, form_input){
-    console.log(form_input)
-    fetch(`/annotate/${quote_id}`,{
-        method:"POST",
-        body:JSON.stringify({
-            annotation:`${form_input}`,
-        }),
-    })
-    .then(response=> {
-        if (response.ok) {
-            return response.json()
-        }
-        else if(response.status===404){
+function errorHandler(response){
+    console.log(response.Error)
+    var error_block = document.getElementById('error_display')
+    console.log(error_block.children)
+    message_board = error_block.children[0]
+    if (response.Error){
+        message_board.innerHTML = response.Error
+        error_block.scrollIntoView({behavior:'smooth'}, true)
 
-            return response.json()
-        }
-        else{
-            return Promise.reject('there was an error: ' + response.json())
-        }
-    })
+    }
 
-    .then(data=>{
-        if (data.AuthenticationError){
 
-            alert(`you need to login first`)
-            window.location = "/login"
-
-        }
-        else{
-            alert(`annotation submitted`)
-            getAnnotate(quote_id)
-            console.log(data)
-
-        }
-        
-    })
 }
 
-function getAnnotate(obj){
-    // document.querySelector('#modquote').innerHTML=""
-    // document.querySelector('#artimage').innerHTML=""
-    // document.querySelector('#annotation').innerHTML=""
 
-    document.querySelector('#q_block').innerHTML=""
-    console.log(obj)
-    
-    // var quoteId = obj.getAttribute('data-link');
-    var quoteId=obj
-    console.log(quoteId)
-    fetch(`/annotation/${quoteId}`)
+function getAnnotate(obj){
+
+    var target_elem = obj.dataset.target
+    var annotation_id = obj.dataset.link
+    var parent_elem = obj.parentElement
+    var child_elem = parent_elem.children
+    console.log(annotation_id)
+    fetch(`/get_annotation/${annotation_id}`)
     .then(response=> {
         if (response.ok) {
             return response.json()
@@ -217,119 +297,6 @@ function getAnnotate(obj){
             return Promise.reject('some other shit you never thought of went down:' + response.status)
         }
     } )
-    .then(data=>{
-        console.log(data)
-
-        const elem = document.createElement('div')
-        const elemImg = document.createElement('div')
-        const elemAnno = document.createElement('div')
-        const elem_view_count=document.createElement('div')
-        const upvote_form_element = document.createElement('form')
-        const upvote_count_element=document.createElement('span')
-        const comment_accordion= create_element(`accordion_comment`)
-        const submit_annotation_accordion= create_element(`submit-annotation`)
-        const Quote = data['quote']['quote']
-        const quote_id = data['quote']['id']
-        const artist = data['quote']['artist']
-        const song = data['quote']['song']
-        const image = data['quote']['image']
-        const annotation_block = document.querySelector('#q_block')
-        elem.className='modquote col justify-content-center'
-        elemImg.className='artimage col text-center'
-        elemAnno.className='annotation col card-body'
-        elem_view_count.className='view_count'
-        annotation_block.className='card justify-content-center col-6'
-        elemImg.innerHTML= `<img src="${image}" width="200px" class="rounded">`
-        elem.innerHTML = `<blockquote class="blockquote"><p class="lead"> <mark>${Quote}</mark> </p><footer class="blockquote-footer"><a href="#">${song}</a><cite title="Source Title"><a href="#">${artist}</a></cite></footer> </blockquote>`
-        // elem_view_count.innerHTML=`<div>views: ${annotation_view_count}</div>`
-        annotation_block.append(elemImg)
-        annotation_block.append(elem)
-        annotation_block.append(elem_view_count)
-
-
-        if (data.annotation=="None"){
-
-            // render annotation form
-
-            const annotation_form= document.createElement('div')
-            annotation_form.className='row justify-content-center col-12'
-            annotation_block.append(elemImg)
-            annotation_block.append(elem)
-            annotation_block.append(elem_view_count)
-            
-            annotation_form.innerHTML=`
-               
-                <div class="row col-12">
-                <label for="annotation" class="form-label">Annotate</label>
-                <textarea class="form-control" id="annotation" rows="3"></textarea>
-                </div>
-                
-                <div class="row">
-                <button id="annotate_buttton" class="btn btn-dark">Submit Annotation</button>
-                </div>
-            `
-            annotation_block.append(annotation_form)
-            // const form_input = document.querySelector('#annotation').value
-            // document.querySelector('#annotate_buttton').addEventListener('click', console.log(form_input))
-
-            document.querySelector('#annotate_buttton').addEventListener('click', ()=>submit_annotation(quote_id, document.querySelector('#annotation').value))
-
-
-        }
-        
-        else {
-                
-            // const Quote = data.annotated_quote
-            // const artist = data.annotated_quote_artist
-            // const song = data.annotated_quote_song
-            // const image = data.annotated_quote_image
-            const annotation = data['annotation']['annotation']
-            const annotation_id = data['annotation']['id']
-            const annotator = data['annotation']['annotator']
-            const annotation_view_count= data['annotation']['annotation_view_count']
-            const upvoted = data['annotation']['upvoted']
-            const upvotes = data['annotation']['upvotes']
-            const comments = data['annotation']['comments']
-
-            elemImg.innerHTML= `<img src="${image}" width="200px" class="rounded">`
-            elem.innerHTML = `<blockquote class="blockquote"><p class="lead"> <mark>${Quote}</mark> </p><footer class="blockquote-footer"><a href="#">${song}</a><cite title="Source Title"><a href="#">${artist}</a></cite></footer> </blockquote>`
-            elem_view_count.innerHTML=`<div>view(s): ${annotation_view_count}</div>`
-            if (upvoted){
-                upvote_form_element.innerHTML=`<i class="fa-solid fa-thumbs-up"><span class="up_count">${upvotes}</span></i>`
-            }
-            else {
-                upvote_form_element.innerHTML=`<i class="fa fa-thumbs-o-up"><span class="up_count">${upvotes}</span></i>`
-            }
-
-            upvote_form_element.className='up_form'
-            
-            elemAnno.innerHTML=`<h5 class="card-title">Annotation</h5><p>${annotation}</p><p><span>contributor(s): <em>${annotator}</em></span></p>`
-            annotation_block.className='card justify-content-center col-6'
-            elemAnno.append(comment_accordion)
-            annotation_block.append(elemImg)
-            annotation_block.append(elem)
-            annotation_block.append(elem_view_count)
-            annotation_block.append(elemAnno)
-            annotation_block.append(upvote_form_element)
-            if (comments>0){
-                comments.forEach(function(comment){
-                    const comment_item = comment
-                    const list_item = create_element(`comment_item`)
-                    list_item.append(comment)
-            })
-            }
-            else{
-                comment_accordion.style.display='none'
-            }
-            
-
-            // load upvote form
-
-            upvote_form_element.addEventListener('click', () => upvote(annotation_id))
-        }
-        
-    })
-
     
 }
 function create_element(obj){
@@ -369,41 +336,6 @@ function create_element(obj){
     
 }
 
-function submitQuote(){
-    document.querySelector('#q_block').innerHTML=""
-    const submit_quote = create_element(`submit_quote`)
-    const create_form = document.createElement('form')
-    create_form.action =`/submitquote`
-    create_form.method='POST'
-
-    create_form.className=`row`
-
-    submit_quote.innerHTML=`
-                            <div class="row">
-                               <label for="exampleFormControlTextarea1" class="form-label">Write Quote</label>
-                               <textarea class="form-control" id="exampleFormControlTextarea1" name="quote" rows="3"></textarea>
-                            </div>
-                            <div class="row">
-                           <label for="exampleFormControlInput1" class="form-label">Source</label>
-                           <input type="text" class="form-control" id="exampleFormControlInput1" name="source"placeholder="">
-                            </div>
-                            <div class="row">
-                           <label for="exampleFormControlInput1" class="form-label">Artist</label>
-                           <input type="text" class="form-control" id="exampleFormControlInput1" name="artist" placeholder="">
-                            </div>
-                            <div class="row">
-                           <label for="exampleFormControlInput1" class="form-label">Image</label>
-                           <input type="url" class="form-control" id="exampleFormControlInput1" name="image" placeholder="">
-                            </div>
-                            <div class="row">
-                            <button type="submit" name="submit" id="exampleFormControlInput1" class="btn btn-dark">SubmitQuote</button>
-                            </div>
-
-                        `
-    create_form.append(submit_quote)
-    document.querySelector("#q_block").append(create_form)
-
-}
 
 function upvote(annotation_id){
 
@@ -431,4 +363,22 @@ function upvote(annotation_id){
             }
     })
 
+}
+
+
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
 }

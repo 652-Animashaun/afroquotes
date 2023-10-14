@@ -87,12 +87,23 @@ WSGI_APPLICATION = 'quotes.wsgi.application'
 # }
 
 DATABASES = {
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.postgresql_psycopg2',
+    #     'NAME': config.PROD_DATABASE["NAME"], 
+    #     'USER': 'postgres', 
+    #     'PASSWORD': config.PROD_DATABASE["PASSWORD"],
+    #     'HOST': '127.0.0.1', 
+    #     'PORT': '5432',
+    # }
+
+    # Uncomment to use local db in a docker container
+
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': config.PROD_DATABASE["NAME"], 
+        'NAME': config.DOCKER_POSTGRES_DB["NAME"], 
         'USER': 'postgres', 
-        'PASSWORD': config.PROD_DATABASE["PASSWORD"],
-        'HOST': '127.0.0.1', 
+        'PASSWORD': config.DOCKER_POSTGRES_DB["PASSWORD"],
+        'HOST': 'db', 
         'PORT': '5432',
     }
 }

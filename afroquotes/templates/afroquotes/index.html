@@ -1,111 +1,124 @@
-{% extends "afroquotes/layout.html" %}
+{% extends "afroquotes/layout.html" %} {% load static %} {% block body %} {% if message %} {{message}} {% endif %} 
 
-
-
-    {% block body %}
-    <!-- Masthead -->
-  <!-- <header class="masthead text-white text-center">
-    <div class="overlay"></div>
-    <div class="container">
-      <div class="row">
-        <div class="col-xl-9 mx-auto">
-          <h1 class="mb-5">Build a landing page for your business or project and generate more leads!</h1>
-        </div>
-        <div class="col-md-10 col-lg-8 col-xl-7 mx-auto">
-          <form class="form-inline" method="POST" action="{% url 'index' %}">
-            {% csrf_token %}
-            <div class="form-row">
-              <div class="col-12 col-md-9 mb-2 mb-md-0">
-                <input type="text" name="queryTerm" class="form-control form-control-lg" placeholder="Search...">
-              </div>
-              <div class="col-12 col-md-3">
-                <input type="submit" name="search" value="SearchQuote" class="btn btn-block btn-lg btn-primary">
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  </header> -->
-  <!-- Image Showcases -->
-  <section class="showcase">
-    {% if message %}
-        {{message}}
-        {% endif %}
-    <div class="container-fluid p-0">
-      <div class="row no-gutters">
-        {% for quote in Quotes %}
-
-        
-        <div class="col-lg-6  my-auto showcase-text shadow-sm p-3 mb-5 bg-body rounded">
-          <div class="">
-            <blockquote  class="blockquote">
-               <p class="lead text-center">
-                 <!-- <mark><a id="annotate" href="#" onclick="getAnnotate(this);" data-link='{{quote.id}}' data-toggle='modal' data-target="#annotate-modal">{{quote.quote}}</a></mark>  -->
-                 <mark><a id="annotate" href="{% url 'annotate' quote.id %}">{{quote.quote}}</a></mark> 
-              </p>
-              <footer class="blockquote-footer"><a href="{% url 'quote_by' quote.artist %}"> {{quote.artist}} </a><cite title="Source Title"><a href="{% url 'quote_from' quote.song %}"> {{quote.song}} </a></cite></footer> 
-           </blockquote>
-           
-          </div>
-        </div>
-        {% endfor %}
-      </div>
-    </div>
-  </section>
-    
-
-    <div class="container">
-        
-
-        <div class="row">
-            
-            <div class= "col-sm-12 col-md-12 col-lg-4">
-
-                <!-- <img src="{{quote.image}}" width="auto"> -->
-                <div class="modal fade" id="annotate-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLongTitle" aria-hidden="true">
-              <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                  <div class="modal-header">
-                    <h5 class="modal-title" id="modalTitle"></h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                      <span aria-hidden="true">&times;</span>
-                    </button>
-                  </div>
-                  <div class="modal-body">
-                    <div>
-                        <div class="row">
-                            <div id="artimage" class="col-sm-4"></div>
-                            <div id="modquote" class="col-sm-8"></div>
-                        </div>
-                        <div class="row">
-                          <h6> Verified Annotation </h6>
-                            <div id="annotation" class="col-sm-10">
-                              
+    <div class="row">
+        <div class="col-sm-12 col-md-8 gedf-main"> 
+            {% for quote in quotes %} 
+            <div class="card gedf-card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="mr-2">
+                                <img class="rounded-circle" width="60" src="{{quote.image}}" alt="">
                             </div>
-                            
+                            <div class="ml-2">
+                                <div class="h5 m-0">{{quote.artist}}</div>
+                                <div class="h7 text-muted">{{quote.song}}</div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="dropdown">
+                                <button class="btn btn-link dropdown-toggle" type="button" id="gedf-drop1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <i class="fa fa-ellipsis-h"></i>
+                                </button>
+                                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="gedf-drop1">
+                                    <div class="h6 dropdown-header">Configuration</div>
+                                    <a class="dropdown-item" href="#">Save</a>
+                                    <a class="dropdown-item" href="#">Hide</a>
+                                    <a class="dropdown-item" href="#">Report</a>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="row">
-                          <form id="upvote"></form>
-                    </div>
-                    ...
-                  </div>
-                  <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                    
-                  </div>
                 </div>
-              </div>
+                <div class="card-body">
+                    <div class="text-muted h7 mb-2">
+                        <i class="fa fa-clock-o"></i>{{quote.timestamp}}
+                    </div>
+                    <a class="card-link" href="#">
+                        <h5 class="card-title">{{quote.quote}}</h5>
+                    </a>
+                    <p class="card-text"></p>
+                </div>
+                <div class="card-footer">
+                    <i class="fa fa-solid fa-eye view-count">
+                        {{quote.annotation.annotation_view_count}}
+                    </i>
+                    <button class="card-link view-annotation" type="button" aria-expanded="false" aria-controls="" data-toggle="collapse" data-clicked="false" data-link="{{quote.annotation.id}}" data-target="#quote_{{quote.id}}">
+                        <i class="fa fa-comment"></i> See annotation </button>
+                    <a href="#" class="card-link">
+                        <i class="fa fa-mail-forward"></i> Share </a>
+                </div>
+                <div class="collapse" id="quote_{{quote.id}}" data-link="{{quote.annotation.id}}">
+                    <div class="card card-body"> {% if quote.annotation.annotation %} <div class="h7 text-muted"> annotated by: {{quote.annotation.annotator}}
+                        </div>
+                        <div>
+                            <a class="card-link upvote" data-link="{{quote.annotation.id}}">
+                                <i class="fa fa-solid fa-circle-up">{{quote.annotation.upvotes}}</i>
+                            </a>
+                        </div>
+                        {{quote.annotation.annotation}}
+                        <button class="card-link suggestion_form" data-link="{{quote.annotation.id}}" data-target="#comment_{{quote.annotation.id}}" type="button" aria-expanded="false" aria-controls="" data-toggle="collapse">
+                            <i class="fa fa- fa-comment">
+                                <span class="badge bg-secondary">{{quote.annotation.comments|length}}</span>
+                            </i>
+                        </button>
+                    </div> {% else %} There's no annotation for this quote yet. <button class="btn btn-secondary" type="button" aria-expanded="false" aria-controls="" data-toggle="collapse" data-target="#annotate_{{quote.annotation.id}}">
+                        <i class="fa fa-comment"></i> Annotate </button> {% endif %}
+                </div>
             </div>
-               
-
+            <div class="collapse" id="annotate_{{quote.annotation.id}}" data-link="annotate_{{quote.annotation.id}}">
+                <div class="card card-body"> {% if form.annotation.errors %} Annotation Field Error: {{ form.annotation.errors }} {% endif %} <form action="{% url 'submit_annotation' quote.id %}" method="POST"> {% csrf_token %} <input type="hidden" name="quote_id" value="{{quote.id}}">
+                        <div class="form-group">
+                            <input class="form-control" name="annotation" placeholder="Annotate" type="text">
+                        </div>
+                        <div class="btn-group">
+                            <button type="submit" class="btn btn-primary">submit</button>
+                        </div>
+                    </form>
+                </div>
             </div>
-
-            <!-- Modal -->
-            
-            
+            <div class="collapse" id="comment_{{quote.annotation.id}}" data-link="">
+                <div class="search col-10">
+                    <form id="suggestion_form">
+                        <input type="hidden" name="comment_anno_id" value="{{quote.annotation.id}}">
+                        <input id="" placeholder="Suggest annotation improvement" type="text" name="comment">
+                        <button type="submit" class="btn btn-primary">submit</button>
+                    </form>
+                </div>
+                <div>{% if quote.annotation.comments %} <h4 class="h6">Suggested Improvements</h4>{% endif %} </div> {% for comment in quote.annotation.comments %} 
+                <div class="card card-body">
+                    <div class="text-muted h7 mb-2">
+                        <i class="fa fa-clock-o"></i>
+                        {{quote.quote.timestamp}}
+                    </div>
+                    <a class="card-link" href="#">
+                        <h5 class="card-title"></h5>
+                    </a>
+                    <p class="card-text">
+                        {{comment.suggestion}}
+                    </p>
+                </div> {% endfor %}
+            </div> 
+            {% endfor %}
         </div>
-    
-</div>
+    </div>
+    </div>
+        <div class="col-sm-12 col-md-4">
+            <div class="card gedf-card">
+                <div class="card-body">
+                    <h5 class="card-title">All Time 100</h5>
+                    <h6 class="card-subtitle mb-2 text-muted"></h6>
+                    <p class="card-text">These are the top viewed and shared quotes of all time.</p>
+                    <a href="{% url 'quote_chart' slug='top100' %}" class="card-link">View </a>
+                </div>
+            </div>
+            <div class="card gedf-card">
+                <div class="card-body">
+                    <h5 class="card-title">Top 10 Weekly</h5>
+                    <h6 class="card-subtitle mb-2 text-muted">Week: </h6>
+                    <p class="card-text">These are the top viewed, shared quotesa nd annotations this week.</p> {% url 'quote_chart' 'top10' as top_10 %} <a href="{{top_10}}" class="card-link">View</a>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}

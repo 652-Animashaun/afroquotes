@@ -1,0 +1,121 @@
+{% extends "afroquotes/layout.html" %}
+{% load static %}
+{% block body %}
+{% if message %}
+{{message}}
+{% endif %}
+    <div class="container-fluid gedf-wrapper">
+        {% if slug %}
+        <h1 class="h1">{{slug}} CHARTS</h1>
+        {% endif %}
+        <div class="row">
+            <div class="col-sm-12 col-md-8 gedf-main">
+                {% for annotation in annotations %}
+
+                <div class="card gedf-card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="mr-2">
+                                    <img class="rounded-circle" width="60" src="{{annotation.annotated_quote_image}}" alt="">
+                                </div>
+                                <div class="ml-2">
+                                    <div class="h5 m-0">{{annotation.annotated_quote_artist}}</div>
+                                    <div class="h7 text-muted">{{annotation.annotated_quote_song}}</div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="dropdown">
+                                    <button class="btn btn-link dropdown-toggle" type="button" id="gedf-drop1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <i class="fa fa-ellipsis-h"></i>
+                                    </button>
+                                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="gedf-drop1">
+                                        <div class="h6 dropdown-header">Configuration</div>
+                                        <a class="dropdown-item" href="#">Save</a>
+                                        <a class="dropdown-item" href="#">Hide</a>
+                                        <a class="dropdown-item" href="#">Report</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="card-body">
+                        <div class="text-muted h7 mb-2"> <i class="fa fa-clock-o"></i>{{annotation.annotated_quote_timestamp}}</div>
+                        <a class="card-link" href="#">
+                            <h5 class="card-title">{{annotation.annotated_quote}}</h5>
+                        </a>
+
+                        <p class="card-text">
+                            
+                        </p>
+                    </div>
+                    <div class="card-footer">
+                        <i class="fa fa-solid fa-eye view-count">
+                            {{annotation.annotation_view_count}}
+                        </i>
+                        <button class="card-link view-annotation" type="button" aria-expanded="false" aria-controls="" data-toggle="collapse" data-clicked="false" data-link="{{annotation.id}}" data-target="#quote_{{annotation.annotated_quote_id}}"><i class="fa fa-comment"></i> See annotation </button>
+                        <a href="{% url 'view_on_yt' annotation.annotated_quote_id %}" target="_blank" class="card-link"><i class="fa fa-mail-forward"></i> Listen Now</a>
+                    </div>
+                    <div class="collapse" id="quote_{{annotation.annotated_quote_id}}" data-link="{{annotation.id}}">
+                          <div class="card card-body">
+                           {% if annotation.annotation %}
+                           <div class="h7 text-muted">annotated by: {{annotation.annotator}}</div>
+                            <div>
+                           <a class="card-link upvote" data-link="{{annotation.id}}"><i class="fa fa-solid fa-circle-up">{{annotation.upvotes}}</i>
+                              </a>
+                          </div>
+                           {{annotation.annotation}}
+                           {% else %}
+                           There's no annotation for this quote yet.
+                           {% endif %}
+                          </div>
+                          <div class="collapse" id="annotate_{{quote.annotation.id}}" data-link="annotate_{{quote.annotation.id}}">
+                              <div class="card card-body">
+                                 {% if form.annotation.errors %}
+                                 Annotation Field Error: {{ form.annotation.errors }}
+                                 {% endif %}
+                                 
+                              </div>
+                           </div>
+                          {% if annotation.annotation %}
+                           
+                           <div class="search col-10">
+                           <input placeholder="Suggest annotation improvement" type="text">
+                           <button type="button" class="btn btn-primary">submit</button>
+                          </div>
+                           {% endif %}
+                     </div>
+                </div>
+                {% endfor %}
+                <!-- Post /////-->
+
+            </div>
+            <div class="col-sm-6 col-md-4">
+                <div class="card gedf-card">
+                    <div class="card-body">
+                        <h5 class="card-title">Latest </h5>
+                        <h6 class="card-subtitle mb-2 text-muted"></h6>
+                        <p class="card-text">These are the top viewed and shared quotes of all time.</p>
+                        <a href="/" class="card-link">View</a>
+                    
+                    </div>
+                </div>
+                <div class="card gedf-card">
+                        <div class="card-body">
+                            <h5 class="card-title">Top 10 Weekly</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">Week: </h6>
+                            <p class="card-text">These are the top viewed, shared quotesa nd annotations this week.</p>
+                            <a href="#" class="card-link">View</a>
+                            
+                        </div>
+                    </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <!-- <script type="text/javascript">
+       $('.collapse').collapse()
+    </script> -->
+{% endblock %}

@@ -1,5 +1,5 @@
 # get python3.8 image 
-FROM python:3.8
+FROM python:3.10
 
 # set working directory
 WORKDIR /app
@@ -14,6 +14,8 @@ RUN python3 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 RUN pip install --no-cache-dir -r requirements.txt
+
+RUN apt-get update && apt-get install nano -y
 
 # copy script to folder
 COPY . /app

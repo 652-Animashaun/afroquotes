@@ -27,7 +27,7 @@ SECRET_KEY = config.SECRET_KEY
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -42,6 +42,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_social_share',
     'djrichtextfield',
+    'rest_framework',
+    'rest_framework.authtoken',
 ]
 
 MIDDLEWARE = [
@@ -53,6 +55,18 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'afroquotes.authenticate.BearerAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+
+}
 
 ROOT_URLCONF = 'quotes.urls'
 
@@ -74,7 +88,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'quotes.wsgi.application'
-
+# DATABASE_ROUTERS = ['afroquotes.utils.db_routers.NonRelRouter', ]
 
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
@@ -87,24 +101,34 @@ WSGI_APPLICATION = 'quotes.wsgi.application'
 # }
 
 DATABASES = {
+#     # 'default': {
+#     #     'ENGINE': 'django.db.backends.postgresql_psycopg2',
+#     #     'NAME': config.PROD_DATABASE["NAME"], 
+#     #     'USER': 'postgres', 
+#     #     'PASSWORD': config.PROD_DATABASE["PASSWORD"],
+#     #     'HOST': '127.0.0.1', 
+#     #     'PORT': '5432',
+#     # }
+
+#     # Uncomment to use local db in a docker container
+
     # 'default': {
     #     'ENGINE': 'django.db.backends.postgresql_psycopg2',
-    #     'NAME': config.PROD_DATABASE["NAME"], 
+    #     'NAME': config.DOCKER_POSTGRES_DB["NAME"], 
     #     'USER': 'postgres', 
-    #     'PASSWORD': config.PROD_DATABASE["PASSWORD"],
-    #     'HOST': '127.0.0.1', 
+    #     'PASSWORD': config.DOCKER_POSTGRES_DB["PASSWORD"],
+    #     'HOST': 'db', 
     #     'PORT': '5432',
-    # }
-
-    # Uncomment to use local db in a docker container
+    # },
 
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': config.DOCKER_POSTGRES_DB["NAME"], 
-        'USER': 'postgres', 
-        'PASSWORD': config.DOCKER_POSTGRES_DB["PASSWORD"],
-        'HOST': 'db', 
-        'PORT': '5432',
+        'ENGINE': 'djongo',
+        'NAME': 'mongo', 
+        'CLIENT': {
+          'host': 'mongodb://mongodb:27017',
+          'username': 'user',
+          'password': 'pass',
+          }
     }
 }
 
@@ -130,6 +154,10 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+CORS_ORIGIN_ALLOW_ALL = True
+CSRF_TRUSTED_ORIGINS =[
+    'http://localhost',
+]
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.1/topics/i18n/

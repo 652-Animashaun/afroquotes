@@ -1,4 +1,4 @@
-version: "3.9"
+version: "3.10"
 services:
 
   app:
@@ -6,11 +6,28 @@ services:
     container_name: afro-api
     ports:
       - "8000:8000"
+    # environment:
+    #   - CONN_STR="mongodb://user:pass@mongo:27017"
     command: python /app/manage.py runserver 0.0.0.0:8000
     volumes:
       - .:/app  
     depends_on:
+      - mongo
       - db
+  mongo:
+    image: mongo:latest
+    container_name: mongo
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=user
+      - MONGO_INITDB_ROOT_PASSWORD=pass
+      - MONGO_INITDB_DATABASE=mongo
+      - MONGO_INITDB_USERNAME=user
+      - MONGO_INITDB_PASSWORD=pass
+    hostname: mongodb
+    ports:
+      - "27017:27017"
+
+      # POSTGRES
   db:
     image: postgres:latest
     hostname: postgres

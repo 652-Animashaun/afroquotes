@@ -9,12 +9,28 @@ from django.urls import reverse
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
 from django.http import JsonResponse
+from rest_framework.authtoken.views import ObtainAuthToken
+from django.contrib.auth import get_user_model
+from rest_framework.generics import CreateAPIView
+from rest_framework.views import APIView
+from rest_framework.permissions import AllowAny
 from django.views import View
+from rest_framework.authtoken.models import Token
 from djrichtextfield.widgets import RichTextWidget
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from rest_framework.decorators import api_view, authentication_classes
+from rest_framework.exceptions import ValidationError, APIException
+from rest_framework.response import Response
+from rest_framework import status
 from .youtube_charts import search_youtube
-
+# from mongo_utils import get_db_handle
+from bson.objectid import ObjectId
 from .models import *
+# from .nonrel_model import *
+from . import config
+from .serializers import *
+import logging
+
 
 
 # Create your views here.
@@ -37,87 +53,6 @@ class SuggestImprove(forms.Form):
 
 
 
-
-# def index(request):
-#   return render(request, "afroquotes/index_js.html")
-def index(request):
-    # quotes = get_all_quotes()
-    quotes = Quote.objects.all().order_by("-timestamp")
-    page_num = request.GET.get('page')
-
-    paginator = Paginator(quotes, 5)
-    try:
-        page_obj= paginator.get_page(page_num)
-
-    except PageNotAnInteger:
-        page_obj= {'error', 'Invalid Page'}
-
-    except EmptyPage:
-        page_obj = paginator.get_page(1)
-
-
-    if page_obj.has_next():
-        page_obj_next = page_obj.next_page_number()
-    else:
-        page_obj_next = 1
-
-    if page_obj.has_previous():
-        page_obj_prev = page_obj.previous_page_number()
-    else:
-        page_obj_prev = 1
-    
-    total_pages = paginator.num_pages
-    links = {'next': page_obj_next, 'prev':page_obj_prev}
-    quotes = list(map(lambda quote: quote.serialize(), list(page_obj)))
-
-    
-    return render(request, "afroquotes/index.html", {"quotes":quotes, "links":page_obj})
-
-
-    
-@csrf_exempt
-def search(request):
-    query = request.GET.get('q', '')
-    print(query)
-    quotes= Quote.objects.filter(quote__icontains=query) | Quote.objects.filter(song__icontains=query) | Quote.objects.filter(artist__icontains=query)
-    print(quotes)
-    if len(quotes)>0:
-        # handle empty querySet here return not found error
-        # quotes = Quote.objects.all().order_by("-timestamp")
-        page_num = request.GET.get('page')
-        paginator = Paginator(quotes, 5)
-        try:
-            page_obj= paginator.get_page(page_num)
-
-        except PageNotAnInteger:
-            page_obj= {'error', 'Invalid Page'}
-
-        except EmptyPage:
-            page_obj = paginator.get_page(1)
-
-
-        if page_obj.has_next():
-            page_obj_next = page_obj.next_page_number()
-        else:
-            page_obj_next = 1
-
-        if page_obj.has_previous():
-            page_obj_prev = page_obj.previous_page_number()
-        else:
-            page_obj_prev = 1
-        
-        total_pages = paginator.num_pages
-        links = {'next': page_obj_next, 'prev':page_obj_prev}
-
-        # Here I map a lambda function over the queryset of Models to 
-        # return the dictionary representation for each element in the list
-       
-        quotes = list(map(lambda quote: quote.serialize(), list(page_obj)))
-    
-        return render(request, "afroquotes/index.html", {"quotes":quotes, "links":page_obj})
-        
-    else :
-        return render(request, "afroquotes/index.html", {"message":"No Results"})
 
 
 def register(request):
@@ -169,136 +104,182 @@ def logout_view(request):
     logout(request)
     return HttpResponseRedirect(reverse("index"))
 
+class CreateUserAPIView(CreateAPIView):
+    serializer_class = CreateUserSerializer
+    permission_classes = [AllowAny]
+
+    def create(self, request, *args, **kwargs):
+        logging.info(f"CreateUserAPIView, create user request: {request}")
+        serializer = self.get_serializer(data = request.data)
+        serializer.is_valid(raise_exception=True)
+        logging.info(f"CreateUserAPIView CreateRequest for user {request.data}")
+        try:
+            user = self.perform_create(serializer)
+            headers = self.get_success_headers(serializer.data)
+           
+            logging.info(user)
+            return Response(
+                    {**serializer.data}
+                )
+        
+        except ValueError as ex:
+            logging.error(f"CreateUserAPIView ValueError: {ex} ")
+            # logger.warning(f"CreateUserAPIView ValueError: {ex} ")
+            print(f"CreateUserAPIView serializers.ValidationError: {ex} ")
+            return JsonResponse({"error":str(ex)})
+            
+        except serializers.ValidationError as err:
+            logging.error(f"CreateUserAPIView serializers.ValidationError: {err} ")
+            # logger.warning(f"CreateUserAPIView serializers.ValidationError: {err} ")
+            print(f"CreateUserAPIView serializers.ValidationError: {err} ")
+            
+            return JsonResponse({"error":str(err)})
+        except Exception as ex:
+            print(f"PRINT    CreateUserAPIView serializers.ValidationError ")
+            logging.exception(f"CreateUserAPIView Exception: {ex} ")
+
+
+class UserAuth(ObtainAuthToken):
+    """
+    Serves request to authenticate a app user 
+    sub-classing the ObtainAuthtoken rest-framework auth class
+    """
+    # serializer_class = UserSerializer
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data,
+                                           context={'request': request})
+
+        try:
+            serializer.is_valid(raise_exception=True)
+            user = serializer.validated_data['user']
+            logging.info(f"UserAuth Login request for user {user.email}")
+            logging.info(f"UserAuth Login request for user {user.email}")
+            
+            token, created = Token.objects.get_or_create(user=user)
+            user = UserSerializer(user)
+            return Response({
+                'token': token.key,
+                'user': user.data
+            })
+        except ValidationError as err:
+            logging.info(f"UserAuthr: {err} ")
+            logging.error("UserAuth Error")
+            return Response({"Error":str(err)})
+        except Exception as ex:
+            return JsonResponse({"Error": str(ex)}, safe=False, status=400)
+
+class AllQuotes(APIView):
+    def get(self, request):
+        quotes = get_all_quotes()
+        quotes = Quote.objects.all().order_by("-timestamp")
+        page_num = request.GET.get('page')
+
+        paginator = Paginator(quotes, 10)
+        try:
+            page_obj= paginator.get_page(page_num)
+
+        except PageNotAnInteger:
+            page_obj= {'error', 'Invalid Page'}
+
+        except EmptyPage:
+            page_obj = paginator.get_page(1)
+
+
+        if page_obj.has_next():
+            page_obj_next = page_obj.next_page_number()
+        else:
+            page_obj_next = 1
+
+        if page_obj.has_previous():
+            page_obj_prev = page_obj.previous_page_number()
+        else:
+            page_obj_prev = 1
+        
+        total_pages = paginator.num_pages
+        links = {'next': page_obj_next, 'prev':page_obj_prev}
+        quotes = list(map(lambda quote: quote.serialize(), list(page_obj)))
+
+        
+        return Response({"quotes":quotes, "total_pages":total_pages})
+
+    
 # @csrf_exempt
-login_required()
-def approve_annotation(request, annotation_id):
-    annotation = Annotation.objects.get(id=annotation_id)
-    if request.user.is_authenticated:
-        if request.user not in [approver for approver in annotation.approvers.all()]:
-            annotation.approvers.add(request.user)
-            # annotation.save()
-        annotation.check_veracity()
-        return JsonResponse({"Message":"Approved"}, status=201)
-    return JsonResponse({"Message":"Unauthorized"}, status=400)
+@api_view(["GET","POST"])
+def search(request):
+    query = request.GET.get('q', '')
+    print(query)
+    quotes= Quote.objects.filter(quote__icontains=query) | Quote.objects.filter(song__icontains=query) | Quote.objects.filter(artist__icontains=query)
+    print(quotes)
+    if len(quotes)>0:
+        # handle empty querySet here return not found error
+        # quotes = Quote.objects.all().order_by("-timestamp")
+        page_num = request.GET.get('page')
+        paginator = Paginator(quotes, 5)
+        try:
+            page_obj= paginator.get_page(page_num)
+
+        except PageNotAnInteger:
+            page_obj= {'error', 'Invalid Page'}
+
+        except EmptyPage:
+            page_obj = paginator.get_page(1)
+
+
+        if page_obj.has_next():
+            page_obj_next = page_obj.next_page_number()
+        else:
+            page_obj_next = 1
+
+        if page_obj.has_previous():
+            page_obj_prev = page_obj.previous_page_number()
+        else:
+            page_obj_prev = 1
+        
+        total_pages = paginator.num_pages
+        links = {'next': page_obj_next, 'prev':page_obj_prev}
+
+        # Here I map a lambda function over the queryset of Models to 
+        # return the dictionary representation for each element in the list
+       
+        quotes = list(map(lambda quote: quote.serialize(), list(page_obj)))
+    
+        return Response({"quotes":quotes, "total_pages":total_pages})
+        
+    else :
+        return Response({"message":"No Results"})
+
+def logout_view(request):
+    logout(request)
+    return HttpResponseRedirect(reverse("index"))
 
 
 
 
-
-class SubmitQuoteClass(View):
-    form = SubmitQuoteForm
+class SubmitQuoteClass(APIView):
+    # form = SubmitQuoteForm
+    serializer_class = QuotesSerializer
     # initial = {'key': 'value'}
     template_name = 'afroquotes/submit_quote.html'
 
-    login_required()
-    def get(self, request):
-        if request.user.is_authenticated:
-            contributor=User.objects.get(id=request.user.id)
-            contributed_quotes = Quote.objects.filter(contributor=contributor)
-            annotation_iq = request.user.get_annotation_iq()
-            contributed_annotation = Annotation.objects.filter(annotator=request.user)
-            unverified_annotations = Annotation.objects.filter(verified=False).exclude(annotator=contributor)
-            unverified_annotations = unverified_annotations.exclude(approvers=contributor)
 
-            print(len(unverified_annotations))
-            # if there's a quote_id in the path params, then we only want to edit a quote
-            if request.GET.get('quote_id'):
-                quote_id = request.GET.get('quote_id')
-                quote = Quote.objects.filter(id=quote_id).first()
-                data = {
-                'song': quote.song,
-                'artist': quote.artist,
-                'quote':quote.quote,
-                'image':quote.image,
-                'quote_id':quote.id,
-                }
-
-                form = self.form(initial=data)
-                return render(request, self.template_name, {'form': form, "annotation_iq":annotation_iq, 'contributed_quotes': contributed_quotes, "unverified_annotations":unverified_annotations})
-            return render(request, self.template_name, {'form': self.form, "annotation_iq":annotation_iq, 'contributed_quotes': contributed_quotes, "unverified_annotations":unverified_annotations})
-        else:
-            return render(request, "afroquotes/login.html")
-
-    login_required()
     def post(self, request):
-        if request.user.is_authenticated:
-            contributor=User.objects.get(id=request.user.id)
-            contributed_quotes = Quote.objects.filter(contributor=contributor)
-            annotation_iq = request.user.get_annotation_iq()
-            unverified_annotations = Annotation.objects.filter(verified=False).exclude(annotator=contributor, approvers=contributor)
+        logging.info(f"user Request from user: {request.user} ")
+        print(f"user Request from user: {request.user} ")
+        contributor=request.user
+        contributed_quotes = Quote.objects.filter(contributor=contributor)
+        annotation_iq = request.user.get_annotation_iq()
+        unverified_annotations = Annotation.objects.filter(verified=False).exclude(annotator=contributor, approvers=contributor)
+        data = request.data.copy()
+        data['contributor']=contributor.id
+        serializer = self.serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        contributed_quotes = Quote.objects.filter(contributor=contributor)
+        return Response({"annotation_iq":annotation_iq, 'contributed_quotes': contributed_quotes, "unverified_annotations":unverified_annotations})
 
-            check_form = self.form(request.POST)
-            if check_form.is_valid():
-                if check_form.cleaned_data['quote_id']:
-                    quote_id=check_form.cleaned_data['quote_id']
-                # if request.POST.get('quote_id'):
-                    quote = Quote.objects.filter(id=quote_id).first()
-                    print(f"existing Quote: {quote.id}")
-                    data = {
-                    'song': quote.song,
-                    'artist': quote.artist,
-                    'quote':quote.quote,
-                    'image':quote.image,
-                    }
-                    form = self.form(request.POST, initial=data)
-                    print(form)
-                    if form.has_changed():
-                        for i in form.changed_data:
-                            if i == 'quote':
-                                quote.quote=form.cleaned_data['quote']
-                            if i == 'artist':
-                                quote.artist = form.cleaned_data['artist']
-                            if i == 'song':
-                                quote.song=form.cleaned_data['song']
-                            if i == 'image':
-                                quote.image= form.cleaned_data['image']
-                                print(form.cleaned_data['image'])
-                        quote.save()
 
-                else:
-
-                    form = self.form(request.POST)
-                    if form.is_valid():
-                        quote = form.cleaned_data['quote']
-                        artist = form.cleaned_data['artist']
-                        song = form.cleaned_data['song']
-                        image = form.cleaned_data['image']
-                        quote = Quote(quote=quote, artist=artist, song=song, image=image, contributor=contributor)
-                        quote.save()
-                contributed_quotes = Quote.objects.filter(contributor=contributor)
-                return render(request, self.template_name, {'form': self.form, "annotation_iq":annotation_iq, 'contributed_quotes': contributed_quotes, "unverified_annotations":unverified_annotations})
-            return render(request, self.template_name, {'form': check_form, "annotation_iq":annotation_iq, 'contributed_quotes': contributed_quotes, "unverified_annotations":unverified_annotations})
-        return render(request, "afroquotes/login.html")
-
-def get_annotation(request, quote_id):
-
-    if request.method == "GET":
-        try:
-            quoteAnnotQuery = Annotation.objects.get(id=quote_id)
-            quoteAnnotQuery.last_viewed=datetime.now()
-            quoteAnnotQuery.annotation_view_count+=1
-            quoteAnnotQuery.save()
-            if request.user.is_authenticated:
-                user=request.user
-                upvoted = quoteAnnotQuery.get_user_upvote(user.id)
-                _annotation=quoteAnnotQuery.serialize()
-                _annotation["upvoted"]=upvoted
-                # return JsonResponse(_annotation, status=200)
-                return JsonResponse({"annotation": _annotation }, status=200)
-            else:
-                _annotation=quoteAnnotQuery.serialize()
-                _annotation["upvoted"]='none'
-                # return JsonResponse(_annotation, status=200)
-                return JsonResponse({"annotation": _annotation }, status=200)
-            # print(quoteAnnotQuery)
-        except Annotation.DoesNotExist :
-            raise 
-            return JsonResponse({"quote": quote, "annotation": "None" }, status=200)
-            # returning error to fetch request from JS. This is deprecated. Now render without JSON
-            # return JsonResponse({"Error": "There are no annotations for this Quote."}, status=404)
-        return JsonResponse({"NotFound": "There are no annotations for this Quote."}, status=400)
-
-        # {"data":{"quote": quoteAnnotQuery.serialize(), "annotation": "None" }}
 
 def view_annotation_page(request, quote_id):
     quote = Quote.objects.get(id=quote_id)

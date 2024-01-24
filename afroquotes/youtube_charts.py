@@ -3,6 +3,7 @@ import requests
 from pprint import pprint
 import base64
 import json
+from afroquotes import config
 
 
 
@@ -125,7 +126,7 @@ def search_youtube(q):
 def yt_resource_by_id(resource_id):
 	params = {
 	"part":"statistics,snippet",
-	"key":"AIzaSyA4Ot-KTuTBBTsaJbosvwCMqmPFdeM2eFM",
+	"key": config.YOUTUBE_KEY,
 	"id": resource_id,
 
 	}
@@ -135,8 +136,8 @@ def yt_resource_by_id(resource_id):
 
 def sportify_resource():
 	spotify_client = {
-	"client_id":"bd65ac70664e4ab09a2414969e3cdf05",
-	"client_secret":"d7e612a1e6e04ab58671f3424087819c",
+	"client_id":SPOTIFY_CLIENT_ID,
+	"client_secret":SPOTIFY_SECERET,
 	}
 	params = {
 	"grant_type":"client_credentials",

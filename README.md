@@ -1,5 +1,26 @@
-# First
+# We present
 Quotes of African origin, especially Afropop artists. Provide verified contributed annotations.
+
+
+## Developers start your local server right inside docker
+run docker compose -f docker-compose.yml up --build 
+this will start 2 docker containers, 
+1. afro-api and 
+2. mongo (db)
+
+in a new terminal 
+run docker ps to get the image id for the api 
+run docker exec -it container_id bash 
+inside the shell
+run python manage.py migrate   -to apply migrations
+
+seed db
+run python manage.py shell
+inside shell 
+
+run exec(open('load_sample_db.py').read())
+
+
 
 # Distinctiveness
 

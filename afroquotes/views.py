@@ -5,6 +5,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django import forms
 import json
 import datetime
+import time
 from django.urls import reverse
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
@@ -171,11 +172,13 @@ class UserAuth(ObtainAuthToken):
             return JsonResponse({"Error": str(ex)}, safe=False, status=400)
 
 class AllQuotes(APIView):
+    permission_classes = [AllowAny]
     def get(self, request):
-        quotes = get_all_quotes()
-        quotes = Quote.objects.all().order_by("-timestamp")
-        page_num = request.GET.get('page')
-
+        query_term = request.GET.get('q')
+        page_num = request.GET.get('currentPage')
+        quotes = get_all_quotes(query=query_term)
+        # quotes = Quote.objects.all().order_by("-timestamp")
+        
         paginator = Paginator(quotes, 10)
         try:
             page_obj= paginator.get_page(page_num)
@@ -195,15 +198,21 @@ class AllQuotes(APIView):
         if page_obj.has_previous():
             page_obj_prev = page_obj.previous_page_number()
         else:
-            page_obj_prev = 1
+            page_obj_prev = None
         
         total_pages = paginator.num_pages
         links = {'next': page_obj_next, 'prev':page_obj_prev}
         quotes = list(map(lambda quote: quote.serialize(), list(page_obj)))
+        context = {
+            "quotes":quotes, 
+            "total_pages":total_pages,
+            "links": links,
 
-        
-        return Response({"quotes":quotes, "total_pages":total_pages})
+            }
+        time.sleep(3)
 
+        return Response(context)
+        # return render(request, 'afroquotes/index.html', context)
     
 # @csrf_exempt
 @api_view(["GET","POST"])
@@ -383,7 +392,6 @@ def submit_suggestion(request, annoID):
                 annotation= Annotation.objects.get(id=annoID)
                 suggestioncomm = SuggestionComment(user=user, annotation=annotation, suggestion=suggested)
                 suggestioncomm.save()
-                # return render(request, "afroquotes/index.html", quotes)
                 return JsonResponse({"suggested":suggestioncomm.serialize()}, status=201)
 
             except Annotation.DoesNotExist:
@@ -392,27 +400,35 @@ def submit_suggestion(request, annoID):
             return JsonResponse({"Error":"method not allowed"}, status=400)
     else:
         return JsonResponse({"Unauthorized":"Login required to perform this action!"}, status=401)
-
         
-def get_all_quotes():
+def get_all_quotes(query=None):
 
     quotes = Quote.objects.all().order_by("-timestamp")
+    print(f"SERVER REQUEST BEFORE QUERY: {query}")
+    print(f"SERVER REQUEST COUNT QUERY:: {quotes.count()}")
 
-    quote_list=[]
-    quotes_dict = {"quotes":quote_list}
+    if query:
+        logging.info(f"SERVER REQUEST QUERY: {query}")
+        print(f"SERVER REQUEST QUERY: {query}")
+        quotes= Quote.objects.filter(quote__icontains=query) | Quote.objects.filter(song__icontains=query) | Quote.objects.filter(artist__icontains=query)
+        print(f"SERVER REQUEST COUNT QUERY:: {quotes.count()}")
 
-    for q in quotes:
-        annotation = Annotation.objects.filter(annotated=q)
+    # quote_list=[]
+    # quotes_dict = {"quotes":quote_list}
 
-        if len(annotation) > 0:
-            annotation = annotation[0].serialize()
-            quote={"quote":q, "annotation":annotation}
-        else:
-            quote={"quote":q, "annotation":None}
-        quote_list.append(quote)
-        # print(quote.get("annotation"))
-    list_quote = quotes_dict.get("quotes")  
-    quotes = quotes_dict
+    # for q in quotes:
+    #     annotation = Annotation.objects.filter(annotated=q)
+
+    #     if len(annotation) > 0:
+    #         annotation = annotation[0].serialize()
+    #         quote={"quote":q, "annotation":annotation}
+    #     else:
+    #         quote={"quote":q, "annotation":None}
+    #     quote_list.append(quote)
+    #     # print(quote.get("annotation"))
+    # list_quote = quotes_dict.get("quotes")  
+    # quotes = quotes_dict
+    print(f"SERVER RETURN COUNT QUERY:: {len(quotes)}")
     return quotes
 
 def quote_chart(request, slug):
@@ -439,7 +455,7 @@ def view_on_yt(request, quote_id):
     video_id = search_youtube(quote.song)
     link = f"https://www.youtube.com/watch?v={video_id}"
     return HttpResponseRedirect(link)
-    # return JsonResponse({"link":link}, 200)
+    
 
 
 

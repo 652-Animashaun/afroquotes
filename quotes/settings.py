@@ -1,4 +1,5 @@
 from afroquotes import config
+import os
 
 """
 Django settings for quotes project.
@@ -93,44 +94,44 @@ WSGI_APPLICATION = 'quotes.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
-
 DATABASES = {
-#     # 'default': {
-#     #     'ENGINE': 'django.db.backends.postgresql_psycopg2',
-#     #     'NAME': config.PROD_DATABASE["NAME"], 
-#     #     'USER': 'postgres', 
-#     #     'PASSWORD': config.PROD_DATABASE["PASSWORD"],
-#     #     'HOST': '127.0.0.1', 
-#     #     'PORT': '5432',
-#     # }
-
-#     # Uncomment to use local db in a docker container
-
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.postgresql_psycopg2',
-    #     'NAME': config.DOCKER_POSTGRES_DB["NAME"], 
-    #     'USER': 'postgres', 
-    #     'PASSWORD': config.DOCKER_POSTGRES_DB["PASSWORD"],
-    #     'HOST': 'db', 
-    #     'PORT': '5432',
-    # },
-
     'default': {
-        'ENGINE': 'djongo',
-        'NAME': 'mongo', 
-        'CLIENT': {
-          'host': 'mongodb://mongodb:27017',
-          'username': 'user',
-          'password': 'pass',
-          }
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
+
+# DATABASES = {
+# #     # 'default': {
+# #     #     'ENGINE': 'django.db.backends.postgresql_psycopg2',
+# #     #     'NAME': config.PROD_DATABASE["NAME"], 
+# #     #     'USER': 'postgres', 
+# #     #     'PASSWORD': config.PROD_DATABASE["PASSWORD"],
+# #     #     'HOST': '127.0.0.1', 
+# #     #     'PORT': '5432',
+# #     # }
+
+# #     # Uncomment to use local db in a docker container
+
+#     # 'default': {
+#     #     'ENGINE': 'django.db.backends.postgresql_psycopg2',
+#     #     'NAME': config.DOCKER_POSTGRES_DB["NAME"], 
+#     #     'USER': 'postgres', 
+#     #     'PASSWORD': config.DOCKER_POSTGRES_DB["PASSWORD"],
+#     #     'HOST': 'db', 
+#     #     'PORT': '5432',
+#     # },
+
+#     'default': {
+#         'ENGINE': 'djongo',
+#         'NAME': 'mongo', 
+#         'CLIENT': {
+#           'host': 'mongodb://mongodb:27017',
+#           'username': 'user',
+#           'password': 'pass',
+#           }
+#     }
+# }
 
 
 
@@ -157,6 +158,7 @@ AUTH_PASSWORD_VALIDATORS = [
 CORS_ORIGIN_ALLOW_ALL = True
 CSRF_TRUSTED_ORIGINS =[
     'http://localhost',
+    'http://127.0.0.1:3000',
 ]
 
 # Internationalization

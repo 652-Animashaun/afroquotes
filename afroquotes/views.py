@@ -33,6 +33,7 @@ from .serializers import *
 import logging
 
 
+logger = logging.getLogger(__name__)
 
 # Create your views here.
 class SubmitQuoteForm(forms.Form):
@@ -174,45 +175,83 @@ class UserAuth(ObtainAuthToken):
 class AllQuotes(APIView):
     permission_classes = [AllowAny]
     def get(self, request):
+
         query_term = request.GET.get('q')
-        page_num = request.GET.get('currentPage')
-        quotes = get_all_quotes(query=query_term)
-        # quotes = Quote.objects.all().order_by("-timestamp")
-        
-        paginator = Paginator(quotes, 10)
+        page_num = request.GET.get('page')
+        logger.info(f"CURR_PAGE_NUM:  {page_num}")
+        if request.session.get('data'):
+            quotes = request.session.get('data')
+            logger.info("SESSION_DATA")
+        else:
+            quotes = get_all_quotes(query=query_term)
+            quotes = list(map(lambda quote: quote.serialize(), list(quotes)))
+            request.session['data'] = quotes
+            logger.info("NO_SESSION_DATA")
+        paginator = Paginator(quotes, 50)
         try:
             page_obj= paginator.get_page(page_num)
-
+            logger.info(f"CURRENT_PAGE_OBJ: {page_obj}")
         except PageNotAnInteger:
             page_obj= {'error', 'Invalid Page'}
-
         except EmptyPage:
             page_obj = paginator.get_page(1)
-
-
         if page_obj.has_next():
             page_obj_next = page_obj.next_page_number()
         else:
             page_obj_next = 1
-
         if page_obj.has_previous():
             page_obj_prev = page_obj.previous_page_number()
         else:
             page_obj_prev = None
-        
         total_pages = paginator.num_pages
         links = {'next': page_obj_next, 'prev':page_obj_prev}
-        quotes = list(map(lambda quote: quote.serialize(), list(page_obj)))
+        request.session['links'] = links
+        request.session['total_pages'] = total_pages
+        logger.info(f"Quote Request: {page_obj}")
+
         context = {
-            "quotes":quotes, 
+            "quotes": list(page_obj), 
             "total_pages":total_pages,
             "links": links,
-
             }
-        time.sleep(3)
 
         return Response(context)
         # return render(request, 'afroquotes/index.html', context)
+
+# def pagination_view(request): 
+#     data = request.GET.get('data', '')
+
+#     try:
+#         page_obj= paginator.get_page(page_num)
+#     except PageNotAnInteger:
+#         page_obj= {'error', 'Invalid Page'}
+#     except EmptyPage:
+#         page_obj = paginator.get_page(1)
+#     if page_obj.has_next():
+#         page_obj_next = page_obj.next_page_number()
+#     else:
+#         page_obj_next = 1
+#     if page_obj.has_previous():
+#         page_obj_prev = page_obj.previous_page_number()
+#     else:
+#         page_obj_prev = None
+#     total_pages = paginator.num_pages
+#     links = {'next': page_obj_next, 'prev':page_obj_prev}
+#     # print(f"Serialize: {page_obj.serialize()}")
+#     quotes = list(map(lambda quote: quote.serialize(), list(page_obj)))
+#     logging.info(f"Quote Request: {quotes}")
+#     print(f"Quote Request: {quotes}")
+#     context = {
+#         "quotes":page_obj, 
+#         "total_pages":total_pages,
+#         "links": links,
+
+#         }
+#     time.sleep(3)
+
+#     return Response(context)
+
+
     
 # @csrf_exempt
 @api_view(["GET","POST"])
@@ -410,7 +449,7 @@ def get_all_quotes(query=None):
     if query:
         logging.info(f"SERVER REQUEST QUERY: {query}")
         print(f"SERVER REQUEST QUERY: {query}")
-        quotes= Quote.objects.filter(quote__icontains=query) | Quote.objects.filter(song__icontains=query) | Quote.objects.filter(artist__icontains=query)
+        quotes= Quote.objects.filter(quote__icontains=query) | Quote.objects.filter(song__icontains=query) | Quote.objects.filter(artist__icontains=query).serialize()
         print(f"SERVER REQUEST COUNT QUERY:: {quotes.count()}")
 
     # quote_list=[]

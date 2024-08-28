@@ -14,12 +14,12 @@ from rest_framework.authtoken.views import ObtainAuthToken
 from django.contrib.auth import get_user_model
 from rest_framework.generics import CreateAPIView
 from rest_framework.views import APIView
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.views import View
 from rest_framework.authtoken.models import Token
 from djrichtextfield.widgets import RichTextWidget
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from rest_framework.decorators import api_view, authentication_classes
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.exceptions import ValidationError, APIException
 from rest_framework.response import Response
 from rest_framework import status
@@ -112,8 +112,9 @@ class CreateUserAPIView(CreateAPIView):
 
     def create(self, request, *args, **kwargs):
         logging.info(f"CreateUserAPIView, create user request: {request}")
+        logging.info(f"CreateUserAPIView, create user form data: {request.data}")
         serializer = self.get_serializer(data = request.data)
-        serializer.is_valid(raise_exception=True)
+        ex = serializer.is_valid(raise_exception=True)
         logging.info(f"CreateUserAPIView CreateRequest for user {request.data}")
         try:
             user = self.perform_create(serializer)
@@ -139,6 +140,7 @@ class CreateUserAPIView(CreateAPIView):
         except Exception as ex:
             print(f"PRINT    CreateUserAPIView serializers.ValidationError ")
             logging.exception(f"CreateUserAPIView Exception: {ex} ")
+        return Response(ex)
 
 
 class UserAuth(ObtainAuthToken):
@@ -161,6 +163,10 @@ class UserAuth(ObtainAuthToken):
             
             token, created = Token.objects.get_or_create(user=user)
             user = UserSerializer(user)
+            logger.info({
+                'token': token.key,
+                'user': user.data
+            })
             return Response({
                 'token': token.key,
                 'user': user.data
@@ -168,13 +174,16 @@ class UserAuth(ObtainAuthToken):
         except ValidationError as err:
             logging.info(f"UserAuthr: {err} ")
             logging.error("UserAuth Error")
-            return Response({"Error":str(err)})
+            return Response({"Error":str(err)}, status=401)
         except Exception as ex:
             return JsonResponse({"Error": str(ex)}, safe=False, status=400)
 
 class AllQuotes(APIView):
     permission_classes = [AllowAny]
     def get(self, request):
+
+        session = request.user
+        logger.info(f"SESSION: {session}")
 
         query_term = request.GET.get('q')
         page_num = request.GET.get('page')
@@ -217,39 +226,6 @@ class AllQuotes(APIView):
 
         return Response(context)
         # return render(request, 'afroquotes/index.html', context)
-
-# def pagination_view(request): 
-#     data = request.GET.get('data', '')
-
-#     try:
-#         page_obj= paginator.get_page(page_num)
-#     except PageNotAnInteger:
-#         page_obj= {'error', 'Invalid Page'}
-#     except EmptyPage:
-#         page_obj = paginator.get_page(1)
-#     if page_obj.has_next():
-#         page_obj_next = page_obj.next_page_number()
-#     else:
-#         page_obj_next = 1
-#     if page_obj.has_previous():
-#         page_obj_prev = page_obj.previous_page_number()
-#     else:
-#         page_obj_prev = None
-#     total_pages = paginator.num_pages
-#     links = {'next': page_obj_next, 'prev':page_obj_prev}
-#     # print(f"Serialize: {page_obj.serialize()}")
-#     quotes = list(map(lambda quote: quote.serialize(), list(page_obj)))
-#     logging.info(f"Quote Request: {quotes}")
-#     print(f"Quote Request: {quotes}")
-#     context = {
-#         "quotes":page_obj, 
-#         "total_pages":total_pages,
-#         "links": links,
-
-#         }
-#     time.sleep(3)
-
-#     return Response(context)
 
 
     
@@ -303,6 +279,25 @@ def logout_view(request):
     return HttpResponseRedirect(reverse("index"))
 
 
+class UserProfile(APIView):
+    # serializer_class = 
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        user = request.user
+        user = User.objects.get(email=user)
+        serialized = UserSerializer(user)
+        logger.info(f"UserProfile SESSION: {serialized.data}")
+
+        annotations = Annotation.objects.filter(annotator=user)
+        annotations = [ annotation.serialize() for annotation in annotations]
+        logger.info(f"UserProfile ANNOTATION: {annotations}")
+
+        return Response({**serialized.data,
+            "annotations": annotations
+            })
+
+
+
 
 
 class SubmitQuoteClass(APIView):
@@ -340,8 +335,6 @@ def view_annotation_page(request, quote_id):
     return render(request, "afroquotes/annotations_page.html", context )
 
 
-
-       
 @csrf_exempt
 def submit_annotation(request, quote_id):
     if request.method=='POST':
@@ -392,11 +385,16 @@ def quote_from(request, filt_term):
         })
 
 # @csrf_exempt
-def upvote(request, annoid):
+@api_view(['POST'])
+def upvote(request):
     if request.user.is_authenticated:
         user = request.user
         # annoid = data.get("annotation")
+        annoid = request.data.get('annoid')
+        logger.info(f"REQUEST DATA: {request.data}")
+        logger.info(f"ANNOID: {annoid}")
         annotation = Annotation.objects.get(id=annoid)
+        logger.info(f"ANNOTATION: {annotation.annotation}")
         pre_upvoted = Upvote.objects.filter(user=user, annotation=annotation)
         if not pre_upvoted:
             upvote = Upvote(annotation=annotation, user=user)

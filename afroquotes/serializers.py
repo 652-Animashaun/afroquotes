@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Quote
+from .models import User, Quote, Annotation
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 
@@ -37,8 +37,19 @@ class CreateUserSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'email', 'first_name', 'last_name')
+        fields = ('id', 'email', 'first_name', 'last_name', 'bio', 'profile_image')
 
+class AnnotationSerializer (serializers.ModelSerializer):
+    quote = serializers.CharField()
+    artist = serializers.CharField()
+    song = serializers.CharField()
+    image = serializers.URLField()
+    contributor = serializers.IntegerField(required=False)
+    annotation = serializers.CharField()
+
+    class Meta:
+        model = Annotation
+        fields = ('quote', 'artist', 'song', 'image', 'contributor')
 
 class QuotesSerializer(serializers.ModelSerializer):
     quote = serializers.CharField()

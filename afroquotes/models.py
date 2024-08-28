@@ -44,6 +44,8 @@ class User(AbstractBaseUser):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
+    bio = models.CharField(max_length=256, null=True)
+    profile_image= models.URLField(null=True)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
@@ -64,6 +66,11 @@ class User(AbstractBaseUser):
               upvote_count = annotation.get_upvotes()
               annotation_iq += upvote_count
         return annotation_iq
+
+    def get_annotations(self):
+        return Annotation.objects.filter(annotator=self).serialize()
+
+
 
 class Quote(models.Model):
     quote=models.CharField(max_length=500)
@@ -119,10 +126,10 @@ class Annotation(models.Model):
             "annotated_quote_artist": self.annotated.artist,
             "annotated_quote_contrib": self.annotated.contributor.username,
             "annotated_quote_id": self.annotated.id,
-            "annotated_quote_timestamp": self.annotated.timestamp,
+            "annotated_quote_timestamp": self.annotated.timestamp.strftime("%A, %d. %B %d/%m/%Y %I:%M%p"),
             "annotator": self.annotator.username,
             "annotation_view_count":self.annotation_view_count,
-            "last_viewed":self.last_viewed,
+            "last_viewed":self.last_viewed.strftime("%A, %d. %B %d/%m/%Y %I:%M%p"),
             "upvotes": self.upvotes.count(),
             "comments": self.get_comments(),
             "verified":self.verified,

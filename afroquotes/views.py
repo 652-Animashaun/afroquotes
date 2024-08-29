@@ -290,8 +290,7 @@ class UserProfile(APIView):
 
         annotations = Annotation.objects.filter(annotator=user)
         annotations = [ annotation.serialize() for annotation in annotations]
-        logger.info(f"UserProfile ANNOTATION: {annotations}")
-
+        logger.info(f"UserProfile ANNOTATION: {annotations[:3]}")
         return Response({**serialized.data,
             "annotations": annotations
             })

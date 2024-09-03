@@ -62,3 +62,7 @@ class QuotesSerializer(serializers.ModelSerializer):
         model = Quote
         fields = ('quote', 'artist', 'song', 'image', 'contributor')
 
+class UserProfile(serializers.Serializer):
+    pass
+
+

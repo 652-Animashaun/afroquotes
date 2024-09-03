@@ -289,11 +289,49 @@ class UserProfile(APIView):
         logger.info(f"UserProfile SESSION: {serialized.data}")
 
         annotations = Annotation.objects.filter(annotator=user)
-        annotations = [ annotation.serialize() for annotation in annotations]
+        annotations = [ annotation.serialize() for annotation in user.get_annotations()]
+        annotation_iq = user.get_annotation_iq()
         logger.info(f"UserProfile ANNOTATION: {annotations[:3]}")
         return Response({**serialized.data,
-            "annotations": annotations
+            "annotation_iq": annotation_iq,
+            "annotations": annotations,
             })
+
+    def put(self, request):
+        """ Handles post requests for bio, dp upload"""
+        logger.info(f"UserProfile Edit Bio, {request.body}")
+        profile = User.objects.get(id=request.data.get("user_id"))
+        if request.user == profile:
+            if request.GET.get("update") == "bio":
+                return self.update_bio(request, profile)
+            elif request.GET.get("update") == "displayphoto":
+                return self.upload_image(request, profile)
+        else:
+            return Response({"message": "Unauthorized"}, status=401)
+
+
+
+
+    def update_bio(self, request, profile):
+        """ Update user bio """
+        logger.info(f"UpdateBio, {request.data}")
+        profile.bio = request.data.get("editedbio")
+        profile.save()
+        serialized = UserSerializer(profile)
+        return Response({"message":"Successful", **serialized.data}, status=201)
+        
+
+    def upload_image(self, request, profile):
+        """ Update user bio """
+        logger.info(f"UploadImage, {request.data}")
+        profile.profile_image = request.data.get("image_url")
+        profile.save()
+        serialized = UserSerializer(profile)
+
+        return Response({"message":"Successful", **serialized.data}, status=201)
+
+
+
 
 
 

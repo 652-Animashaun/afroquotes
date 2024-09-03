@@ -10,5 +10,6 @@ urlpatterns = [
     path("logout", views.logout_view, name="logout"),
     path("submitquote", views.SubmitQuoteClass.as_view(), name="submitQuote"),
     path("search", views.search, name="search"),
-    path("user", views.UserProfile.as_view(), name="user_profile"),
+    path("user", views.UserProfile.as_view(), name="view_user_profile"),
+    path("user/editbio", views.UserProfile.as_view(), name="editbio"),
 ]

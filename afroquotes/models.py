@@ -68,8 +68,7 @@ class User(AbstractBaseUser):
         return annotation_iq
 
     def get_annotations(self):
-        return Annotation.objects.filter(annotator=self).serialize()
-
+        return Annotation.objects.filter(annotator=self)
 
 
 class Quote(models.Model):
@@ -102,8 +101,6 @@ class Quote(models.Model):
             return annotation[0].serialize()
         else:
             return None
-
-    
 
     
 class Annotation(models.Model):
@@ -148,7 +145,6 @@ class Annotation(models.Model):
     def get_comments(self):
         comments= SuggestionComment.objects.filter(annotation=self)
         return [comment.serialize() for comment in comments]
-
 
 
 class Upvote(models.Model):

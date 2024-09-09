@@ -94,14 +94,14 @@ WSGI_APPLICATION = 'quotes.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
-}
-
 # DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+#     }
+# }
+
+DATABASES = {
 # #     # 'default': {
 # #     #     'ENGINE': 'django.db.backends.postgresql_psycopg2',
 # #     #     'NAME': config.PROD_DATABASE["NAME"], 
@@ -122,16 +122,16 @@ DATABASES = {
 #     #     'PORT': '5432',
 #     # },
 
-#     'default': {
-#         'ENGINE': 'djongo',
-#         'NAME': 'mongo', 
-#         'CLIENT': {
-#           'host': 'mongodb://mongodb:27017',
-#           'username': 'user',
-#           'password': 'pass',
-#           }
-#     }
-# }
+    'default': {
+        'ENGINE': 'djongo',
+        'NAME': 'mongo', 
+        'CLIENT': {
+          'host': 'mongodb://mongodb:27017',
+          'username': 'user',
+          'password': 'pass',
+          }
+    }
+}
 
 
 

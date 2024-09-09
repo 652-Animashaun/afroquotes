@@ -300,22 +300,27 @@ class UserProfile(APIView):
     def put(self, request):
         """ Handles post requests for bio, dp upload"""
         logger.info(f"UserProfile Edit Bio, {request.body}")
+        action = request.GET.get("update")
+        logger.info(f"TYPEOF {type(action)}")
         profile = User.objects.get(id=request.data.get("user_id"))
+        logger.info(f" RequestUser: {request.user}, UpdateUser: {profile}")
         if request.user == profile:
-            if request.GET.get("update") == "bio":
+            if action == "bio":
                 return self.update_bio(request, profile)
-            elif request.GET.get("update") == "displayphoto":
+            elif action == "dp":
                 return self.upload_image(request, profile)
+
+            else:
+                logger.info(f"Please specify action! Specified ACt9ion is not allowed: {action}")
+                return Response({"message": "Action not allowed!"}, status=401)
         else:
             return Response({"message": "Unauthorized"}, status=401)
-
-
 
 
     def update_bio(self, request, profile):
         """ Update user bio """
         logger.info(f"UpdateBio, {request.data}")
-        profile.bio = request.data.get("editedbio")
+        profile.bio = request.data.get("bio")
         profile.save()
         serialized = UserSerializer(profile)
         return Response({"message":"Successful", **serialized.data}, status=201)
@@ -324,17 +329,11 @@ class UserProfile(APIView):
     def upload_image(self, request, profile):
         """ Update user bio """
         logger.info(f"UploadImage, {request.data}")
-        profile.profile_image = request.data.get("image_url")
+        profile.profile_image = request.data.get("dp")
         profile.save()
         serialized = UserSerializer(profile)
 
         return Response({"message":"Successful", **serialized.data}, status=201)
-
-
-
-
-
-
 
 
 class SubmitQuoteClass(APIView):

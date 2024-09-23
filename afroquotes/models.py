@@ -68,7 +68,7 @@ class User(AbstractBaseUser):
         return annotation_iq
 
     def get_annotations(self):
-        return Annotation.objects.filter(annotator=self)
+        return Annotation.objects.filter(annotator=self).values("annotated")
 
 
 class Quote(models.Model):
@@ -169,11 +169,3 @@ class SuggestionComment(models.Model):
         }
 
 
-# class QuoteSchema(Schema):
-#   id = fields.Int()
-#   quote = fields.Str()
-#   contributor = fields.Str()
-#   image = fields.Str()
-#   song = fields.Str()
-#   timestamp = fields.DateTime()
-#   artist = fields.Str()

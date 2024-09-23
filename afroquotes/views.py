@@ -180,49 +180,24 @@ class UserAuth(ObtainAuthToken):
 
 class AllQuotes(APIView):
     permission_classes = [AllowAny]
+    serializer_class = QResponseSerializer
     def get(self, request):
-
         session = request.user
         logger.info(f"SESSION: {session}")
-
         query_term = request.GET.get('q')
-        page_num = request.GET.get('page')
+        page_num = request.GET.get('page', 1)
         logger.info(f"CURR_PAGE_NUM:  {page_num}")
         if request.session.get('data'):
             quotes = request.session.get('data')
             logger.info("SESSION_DATA")
         else:
             quotes = get_all_quotes(query=query_term)
-            quotes = list(map(lambda quote: quote.serialize(), list(quotes)))
+            quotes = QResponseSerializer(map(lambda quote: quote.serialize(), list(quotes)), many=True)
+            quotes = quotes.data
             request.session['data'] = quotes
             logger.info("NO_SESSION_DATA")
-        paginator = Paginator(quotes, 50)
-        try:
-            page_obj= paginator.get_page(page_num)
-            logger.info(f"CURRENT_PAGE_OBJ: {page_obj}")
-        except PageNotAnInteger:
-            page_obj= {'error', 'Invalid Page'}
-        except EmptyPage:
-            page_obj = paginator.get_page(1)
-        if page_obj.has_next():
-            page_obj_next = page_obj.next_page_number()
-        else:
-            page_obj_next = 1
-        if page_obj.has_previous():
-            page_obj_prev = page_obj.previous_page_number()
-        else:
-            page_obj_prev = None
-        total_pages = paginator.num_pages
-        links = {'next': page_obj_next, 'prev':page_obj_prev}
-        request.session['links'] = links
-        request.session['total_pages'] = total_pages
-        logger.info(f"Quote Request: {page_obj}")
 
-        context = {
-            "quotes": list(page_obj), 
-            "total_pages":total_pages,
-            "links": links,
-            }
+        context = custom_pagination(request, quotes, page_num, per_page=50)
 
         return Response(context)
         # return render(request, 'afroquotes/index.html', context)
@@ -267,7 +242,7 @@ def search(request):
         # Here I map a lambda function over the queryset of Models to 
         # return the dictionary representation for each element in the list
        
-        quotes = list(map(lambda quote: quote.serialize(), list(page_obj)))
+        quotes =  QResponseSerializer(map(lambda quote: quote.serialize(), list(quotes)), many=True)
     
         return Response({"quotes":quotes, "total_pages":total_pages})
         
@@ -286,16 +261,28 @@ class UserProfile(APIView):
         user = request.user
         user = User.objects.get(email=user)
         serialized = UserSerializer(user)
-        logger.info(f"UserProfile SESSION: {serialized.data}")
 
-        annotations = Annotation.objects.filter(annotator=user)
-        annotations = [ annotation.serialize() for annotation in user.get_annotations()]
-        annotation_iq = user.get_annotation_iq()
-        logger.info(f"UserProfile ANNOTATION: {annotations[:3]}")
-        return Response({**serialized.data,
-            "annotation_iq": annotation_iq,
-            "annotations": annotations,
-            })
+        logger.info(f"UserProfile SESSION: {serialized.data}")
+        query_term = request.GET.get('q')
+        page_num = request.GET.get('page', 1)
+        logger.info(f"CURR_PAGE_NUM:  {page_num}")
+        if request.session.get('data'):
+            quotes = request.session.get('data')
+            logger.info("SESSION_DATA")
+        else:
+            annotations = user.get_annotations()
+            annotated_quotes = Quote.objects.filter(id__in = annotations)
+            qserializer =  QResponseSerializer(map(lambda quote: quote.serialize(), annotated_quotes), many=True)
+            quotes = qserializer.data
+            annotation_iq = user.get_annotation_iq()
+            request.session['data'] = quotes
+            logger.info("NO_SESSION_DATA")
+        context = custom_pagination(request, quotes, page_num, per_page=20)
+        context["user"] = serialized.data
+        context["annotation_iq"] = user.get_annotation_iq()
+        context["annotations_count"] = len(annotations)
+        logger.info(f"UserProfile ANNOTATION: {context}")
+        return Response(context)
 
     def put(self, request):
         """ Handles post requests for bio, dp upload"""
@@ -485,22 +472,6 @@ def get_all_quotes(query=None):
         print(f"SERVER REQUEST QUERY: {query}")
         quotes= Quote.objects.filter(quote__icontains=query) | Quote.objects.filter(song__icontains=query) | Quote.objects.filter(artist__icontains=query).serialize()
         print(f"SERVER REQUEST COUNT QUERY:: {quotes.count()}")
-
-    # quote_list=[]
-    # quotes_dict = {"quotes":quote_list}
-
-    # for q in quotes:
-    #     annotation = Annotation.objects.filter(annotated=q)
-
-    #     if len(annotation) > 0:
-    #         annotation = annotation[0].serialize()
-    #         quote={"quote":q, "annotation":annotation}
-    #     else:
-    #         quote={"quote":q, "annotation":None}
-    #     quote_list.append(quote)
-    #     # print(quote.get("annotation"))
-    # list_quote = quotes_dict.get("quotes")  
-    # quotes = quotes_dict
     print(f"SERVER RETURN COUNT QUERY:: {len(quotes)}")
     return quotes
 
@@ -529,7 +500,35 @@ def view_on_yt(request, quote_id):
     link = f"https://www.youtube.com/watch?v={video_id}"
     return HttpResponseRedirect(link)
     
+def custom_pagination(request, quotes, page_num, per_page=50):
+    paginator = Paginator(quotes, per_page)
+    try:
+        page_obj= paginator.get_page(page_num)
+        logger.info(f"CURRENT_PAGE_OBJ: {page_obj}")
+    except PageNotAnInteger:
+        page_obj= {'error', 'Invalid Page'}
+    except EmptyPage:
+        page_obj = paginator.get_page(1)
+    if page_obj.has_next():
+        page_obj_next = page_obj.next_page_number()
+    else:
+        page_obj_next = 1
+    if page_obj.has_previous():
+        page_obj_prev = page_obj.previous_page_number()
+    else:
+        page_obj_prev = None
+    total_pages = paginator.num_pages
+    links = {'next': page_obj_next, 'prev':page_obj_prev}
+    request.session['links'] = links
+    request.session['total_pages'] = total_pages
+    logger.info(f"Quote Request: {page_obj}")
 
+    context = {
+        "quotes": list(page_obj), 
+        "total_pages":total_pages,
+        "links": links,
+        }
+    return context
 
 
 

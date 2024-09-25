@@ -209,7 +209,8 @@ LOGGING = {
     },
     'formatters': {
         'verbose': {
-            'format': '[contactor] %(levelname)s %(asctime)s %(message)s'
+             'format': '{levelname} {asctime} {module} {message} [Logger: {name}]',
+             'style': '{',
         },
     },
     'handlers': {
@@ -225,6 +226,20 @@ LOGGING = {
         '': {
             'handlers': ['console'],
             'level': 'DEBUG',
+            'propagate': False,
+        },
+         'django': {
+            'handlers': ['console'],
+            'level': 'INFO',  # Change this to WARNING, ERROR, or CRITICAL if you want fewer logs
+        },
+        'django.db.backends': {
+            'level': 'ERROR',  # Disable or limit SQL query logs
+            'handlers': ['console'],
+            'propagate': False,
+        },
+        'djongo.sql2mongo.query': {
+            'level': 'INFO',  # Disable or limit SQL query logs
+            'handlers': ['console'],
             'propagate': False,
         },
     }

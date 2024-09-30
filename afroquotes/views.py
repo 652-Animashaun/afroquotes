@@ -54,7 +54,9 @@ class SuggestImprove(forms.Form):
     comment = forms.CharField(min_length=32, max_length=300)
 
 
-
+def index(request):
+    quotes = Quote.objects.all()
+    return render(request, "afroquotes/googleindex.html", {"quotes":quotes})
 
 
 def register(request):
@@ -201,6 +203,25 @@ class AllQuotes(APIView):
 
         return Response(context)
         # return render(request, 'afroquotes/index.html', context)
+
+class Annotate(APIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = SubmitAnnotation
+    def put(self, request):
+        request_user = request.user
+        logger.info(f"USER SUBMITTING ANNOTATION, {request_user}")
+        serializer = SubmitAnnotation(request.data)
+        logger.info(f"ANNOTATION data, {serializer.data}")
+        annotator = User.objects.get(id=serializer.data.get("annotator"))
+        if annotator != request_user:
+            return Response({"message":"Unauthrized user action"}, status=500)
+        quote = Quote.objects.get(id=serializer.data.get("annotated"))
+
+        annotation = Annotation(annotator=annotator, annotated=quote, annotation=serializer.data.get("annotation"))
+        annotation.save()
+
+        context = QResponseSerializer(quote.serialize())
+        return Response({**context.data})
 
 
     

@@ -126,8 +126,8 @@ class Annotation(models.Model):
             "annotated_quote_timestamp": self.annotated.timestamp.strftime("%A, %d. %B %d/%m/%Y %I:%M%p"),
             "annotator": self.annotator.username,
             "annotation_view_count":self.annotation_view_count,
-            "last_viewed":self.last_viewed.strftime("%A, %d. %B %d/%m/%Y %I:%M%p"),
-            "upvotes": self.upvotes.count(),
+            "last_viewed":self.last_viewed.strftime("%A, %d. %B %d/%m/%Y %I:%M%p") if self.last_viewed else None,
+            "upvotes": self.upvotes.count() if self.upvotes else 0,
             "comments": self.get_comments(),
             "verified":self.verified,
         }

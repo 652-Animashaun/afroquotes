@@ -83,5 +83,9 @@ class QResponseSerializer(serializers.Serializer):
     artist = serializers.CharField(max_length=255)
     annotation = AnnotationSerializer()
 
+class SubmitAnnotation(serializers.Serializer):
+    annotator = serializers.IntegerField(required=True)
+    annotated = serializers.IntegerField(required=True)
+    annotation = serializers.CharField(max_length=500, required=True)
 
 

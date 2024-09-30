@@ -12,4 +12,6 @@ urlpatterns = [
     path("search", views.search, name="search"),
     path("user", views.UserProfile.as_view(), name="view_user_profile"),
     path("user/editbio", views.UserProfile.as_view(), name="editbio"),
+    path("annotate", views.Annotate.as_view(), name="annotate"),
+
 ]
